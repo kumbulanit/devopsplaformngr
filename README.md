@@ -21,8 +21,9 @@ localhost** — no cloud account, no cost, full cleanup.
 │   ├── lab07-devsecops/
 │   ├── lab08-observability/         # + mini game day
 │   └── lab09-capstone/              # Golden-path end-to-end
+├── workshops/                       # THE 3 hands-on workshops (Module 10)
 ├── lab-setup/                       # install-ubuntu24.sh + check-environment.sh
-├── instructor/                      # Facilitator guide, solutions, platform canvas
+├── instructor/                      # Facilitator guide, solutions, canvas, theory demos
 ├── assessments/                     # Day 1 & 2 quizzes + answers
 ├── tools/                           # Extract & run every lab command (QA harness)
 └── verify/                          # End-to-end verification container
@@ -40,38 +41,52 @@ cd ~/devopsplatformengr
 
 Then follow `labs/lab00-environment-setup/README.md` and each lab in order.
 
+## Course Format
+
+Matching the published outline: **Modules 1–9 are in-depth theory** (each
+with one very basic demo from `instructor/theory-demos.md`), and
+**Module 10's three workshops are the hands-on core** (`workshops/`):
+
+1. **Setting up a basic DevOps pipeline** — Workshop 1 (Day 1 pm)
+2. **Building and deploying a microservice** — Workshop 2 (Day 2 am)
+3. **Implementing IaC for infrastructure** — Workshop 3 (Day 2 pm)
+
+The capstone (Lab 09) ties all three together as one golden path. Labs 01,
+07 and 08 remain as self-paced extras after the course.
+
 ## Agenda
 
-### Day 1 — Foundations, Culture, IaC & CI/CD
+### Day 1 — Foundations, Culture, Tools, IaC & CI/CD
 
-| Time | Module | Activity / Lab |
-|-------------|------------------------------------------|------------------------------------|
-| 08:30–09:00 | Welcome, course goals, logistics | Preflight confirmation |
-| 09:00–10:30 | 1: Intro to DevOps & Platform Engineering | Lab 00: Environment verification |
-| 10:30–10:45 | *Break* | |
-| 10:45–12:15 | 2: Culture & Collaboration | Lab 01: Git collaboration + retro |
+| Time | Block | Hands-on element |
+|-------------|--------------------------------------------|--------------------------------------|
+| 08:30–09:00 | Welcome, logistics | Preflight confirmation |
+| 09:00–10:15 | **Module 1**: Intro to DevOps & Platform Eng (theory) | Demo: preflight check (5 min) |
+| 10:15–10:30 | *Break* | |
+| 10:30–11:30 | **Module 2**: Culture & Collaboration (theory) | Westrum self-assessment (10 min) |
+| 11:30–12:15 | **Module 3**: Tools & Technologies (theory) | Toolchain mapping + DORA (15 min) |
 | 12:15–13:00 | *Lunch* | |
-| 13:00–14:00 | 3: Tools & Technologies | Toolchain mapping exercise |
-| 14:00–15:30 | 4: Infrastructure as Code | Lab 05: Terraform (+ Ansible bonus) |
-| 15:30–15:45 | *Break* | |
-| 15:45–17:15 | 5: CI/CD | Lab 04: GitHub Actions pipeline |
+| 13:00–14:15 | **Module 4**: Infrastructure as Code (theory) | Demo: Ansible idempotence (10 min) |
+| 14:15–15:15 | **Module 5**: CI/CD (theory) | Read a real workflow (10 min) |
+| 15:15–15:30 | *Break* | |
+| 15:30–17:15 | **WORKSHOP 1: Setting up a basic DevOps pipeline** | full hands-on (105 min) |
 | 17:15–17:30 | Day 1 quiz + Q&A | |
 
-### Day 2 — Containers, Security, Observability & Platform Thinking
+### Day 2 — Containers, Security, Observability, Platform Thinking & Workshops
 
-| Time | Module | Activity / Lab |
-|-------------|------------------------------------------------|----------------------------------------|
-| 08:30–10:00 | 6: Microservices & Containerization | Labs 02+03: Docker & Compose |
-| 10:00–10:15 | *Break* | |
-| 10:15–11:45 | 6 cont.: Kubernetes | Lab 06: Kubernetes on kind |
-| 11:45–12:15 | 7: Security & Compliance theory | |
+| Time | Block | Hands-on element |
+|-------------|--------------------------------------------|--------------------------------------|
+| 08:30–09:45 | **Module 6**: Microservices & Containerization (theory) | Demo: a container in 6 commands |
+| 09:45–10:00 | *Break* | |
+| 10:00–12:15 | **WORKSHOP 2: Building and deploying a microservice** | full hands-on (135 min) |
 | 12:15–13:00 | *Lunch* | |
-| 13:00–14:00 | 7 cont. (DevSecOps) | Lab 07: Scanning & policy as code |
-| 14:00–15:15 | 8: Observability & Reliability | Lab 08: Prometheus/Grafana + game day |
-| 15:15–15:30 | *Break* | |
-| 15:30–16:15 | 9: Platform as a Product | Platform canvas exercise |
-| 16:15–17:00 | 10: Capstone | Lab 09: Golden-path deploy |
-| 17:00–17:30 | 11: Summary & next steps + Day 2 quiz | |
+| 13:00–13:50 | **Module 7**: Security & Compliance (theory) | Demo: scan + one policy (10 min) |
+| 13:50–14:30 | **Module 8**: Observability & Reliability (theory) | Demo: mini incident (15 min) |
+| 14:30–15:30 | **WORKSHOP 3: Implementing IaC** | full hands-on (60 min) |
+| 15:30–15:45 | *Break* | |
+| 15:45–16:30 | **Module 9**: Platform as a Product (theory) | Platform canvas (25 min) |
+| 16:30–17:10 | **Module 10**: Capstone — the golden path | run-capstone + handover doc |
+| 17:10–17:30 | **Module 11**: Summary & next steps + Day 2 quiz | |
 
 ## Audience Assumptions
 
@@ -90,9 +105,10 @@ kubectl, Terraform, Trivy, Conftest, tmux, jq, Python — is installed by
 
 ## How to Use This Package
 
-1. **Participants:** run the Quick Start, then follow each lab's `README.md`
-   in agenda order. Every lab ends with a Verification Checklist — done means
-   checklist done.
+1. **Participants:** run the Quick Start, follow the theory demos in class,
+   and use `workshops/` for the three hands-on workshops. Every workshop has
+   success criteria — done means criteria checked. Labs 01/07/08 are yours
+   to run self-paced after the course.
 2. **Instructor:** read `instructor/facilitator-guide.md` (including the
    *Before the Course* section) and the speaker notes in the PPTX decks.
 3. **Slides** are designed to be presented and then **shared with

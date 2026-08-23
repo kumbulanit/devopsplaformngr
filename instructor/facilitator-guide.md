@@ -25,36 +25,39 @@
 4. Day 1 needs outbound internet (image pulls, Terraform providers, GitHub).
    Lab 04 additionally needs participant GitHub accounts **or** `act`.
 
+## Course Format (matches the sold outline)
+
+Modules 1–9 = **in-depth theory**, each with one very basic demo
+(`instructor/theory-demos.md`, 5–15 min). Module 10 = the **three hands-on
+workshops** (`workshops/`) plus the capstone. Module 11 closes. The speaker
+notes in the decks carry the depth — read them before delivering; they are
+also the participant reference after the course.
+
 ## Day 1 — Running Order
 
-| Time | Module | Activity | Facilitator notes |
-|------|--------|----------|-------------------|
-| 08:30–09:00 | Welcome, logistics | — | Confirm every VM passed preflight. |
-| 09:00–10:30 | 1: Intro to DevOps & Platform Eng | Lab 00 (30 min verify-only) | Lab 00 is verification, not installation — VMs are pre-baked. Teach tmux here. |
-| 10:30–10:45 | *Break* | | |
-| 10:45–12:15 | 2: Culture & Collaboration | Lab 01 (45 min) | Emphasise blameless language; the retro format returns in Lab 08's game day. |
-| 12:15–13:00 | *Lunch* | | |
-| 13:00–14:00 | 3: Tools & Technologies | **Toolchain mapping exercise** (15 min) | Pairs map their own company's tools onto the infinity-loop diagram, then tour this course's chain. |
-| 14:00–15:30 | 4: Infrastructure as Code | Lab 05 (60 min) + Ansible bonus | First IaC exposure for many — walk `plan` output slowly. Bonus shows the config-management half of IaC. |
-| 15:30–15:45 | *Break* | | |
-| 15:45–17:15 | 5: CI/CD | Lab 04 (60 min) | The report-vs-gate Trivy discussion is the key takeaway. End the day with a green pipeline. |
-| 17:15–17:30 | Day 1 quiz + Q&A | | |
+| Time | Block | Facilitator notes |
+|------|-------|-------------------|
+| 08:30–09:00 | Welcome | Confirm every VM passed preflight before Module 1. |
+| 09:00–10:15 | Module 1 theory | History → Three Ways → CALMS → platform engineering. Demo: preflight together. |
+| 10:30–11:30 | Module 2 theory | Westrum + psychological safety + Conway. Exercise: self-assessment — keep it anonymous. |
+| 11:30–12:15 | Module 3 theory | Categories not brands. Exercise: toolchain mapping; collect lead-time show of hands. |
+| 13:00–14:15 | Module 4 theory | The deepest theory block. Demo: Ansible idempotence live — rehearse it. |
+| 14:15–15:15 | Module 5 theory | Report-vs-gate is the key slide. Demo: read the workflow in pairs. |
+| 15:30–17:15 | **Workshop 1** | Pipeline hands-on. Step 4 (break a test on purpose) is the payoff — do not cut it. |
+| 17:15–17:30 | Quiz + Q&A | |
 
 ## Day 2 — Running Order
 
-| Time | Module | Activity | Facilitator notes |
-|------|--------|----------|-------------------|
-| 08:30–10:00 | 6: Microservices & Containers | Labs 02+03 as one guided block (75 min) | Docker → Compose progression; Lab 02 Parts C–D compress well if late. |
-| 10:00–10:15 | *Break* | | |
-| 10:15–11:45 | 6 cont.: Kubernetes | Lab 06 (75 min) | localhost:30080 NodePort demo lands well; keep the cluster alive for Lab 07/09. |
-| 11:45–12:15 | 7: Security & Compliance theory | — | |
-| 12:15–13:00 | *Lunch* | **Start capstone image pre-builds on your demo VM** | |
-| 13:00–14:00 | 7 cont. | Lab 07 (60 min) | Raw-vs-rendered conftest demo is the aha moment. Teach triage, not panic. |
-| 14:00–15:15 | 8: Observability & Reliability | Lab 08 (60 min + 15 min game day) | You are the saboteur in Part G: stop/pause the payment container per group. Insist on the 5-line postmortem. |
-| 15:15–15:30 | *Break* | | |
-| 15:30–16:15 | 9: Platform as a Product | **Platform canvas** (`instructor/platform-canvas.md`, 25 min + debrief) | Print or share the canvas; box 9 ("what we will NOT do") drives the best discussion. |
-| 16:15–17:00 | 10: Capstone | Lab 09 guided (45 min) | Pre-create the kind cluster at lunch; the script then runs in ~5 min, leaving time for the handover doc. |
-| 17:00–17:30 | 11: Summary & next steps, Day 2 quiz | — | Closing slides: recap the golden path they built, certification roadmap, first-week-back actions. |
+| Time | Block | Facilitator notes |
+|------|-------|-------------------|
+| 08:30–09:45 | Module 6 theory | Trade-offs honestly; 12-factor mapped to our app. Demo: container in 6 commands. |
+| 10:00–12:15 | **Workshop 2** | The big one: Docker → Compose → kind. Keep the cluster alive for the capstone. |
+| 13:00–13:50 | Module 7 theory | Scanner taxonomy + supply chain + triage. Demo: scan + raw-vs-rendered policy. |
+| 13:50–14:30 | Module 8 theory | SLO/error budgets + burn rates. Demo: mini incident — you are the saboteur. |
+| 14:30–15:30 | **Workshop 3** | Full Terraform loop + drift. Step 5 (cloud read-through) answers "why localhost?" |
+| 15:45–16:30 | Module 9 theory | Product thinking. Exercise: platform canvas — debrief boxes 8 and 9. |
+| 16:30–17:10 | Module 10 capstone | Pre-create cluster + pre-build images at lunch; script then runs in ~5 min. |
+| 17:10–17:30 | Module 11 + quiz | Commitments round: one action for the first week back. |
 
 ## Common Pitfalls
 
