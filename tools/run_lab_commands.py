@@ -24,7 +24,7 @@ VERIFY_BIN = str(REPO_ROOT / "verify" / "bin")
 
 def tool_available(name):
     return subprocess.run(
-        f"command -v {name}", shell=True, capture_output=True
+        f"command -v {name}", shell=True, capture_output=True, executable="/bin/bash"
     ).returncode == 0
 
 
@@ -67,7 +67,7 @@ def run(cmd, cwd, classification):
 
     if classification == "background":
         proc = subprocess.Popen(
-            cmd, shell=True, cwd=target,
+            cmd, shell=True, cwd=target, executable="/bin/bash",
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             start_new_session=True, env=env
         )
@@ -82,7 +82,7 @@ def run(cmd, cwd, classification):
     try:
         result = subprocess.run(
             cmd, shell=True, cwd=target, capture_output=True, text=True,
-            timeout=180, env=env
+            timeout=180, env=env, executable="/bin/bash"
         )
     except subprocess.TimeoutExpired:
         return "FAIL", "Timeout (>180s)", ""

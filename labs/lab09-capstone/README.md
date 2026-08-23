@@ -1,119 +1,103 @@
 # Lab 09 — Capstone: End-to-End Golden Path
 
-**Duration:** 90 minutes  
-**Prerequisites:** Labs 00–08 completed.
-
-## Objectives
-
-- Experience building a complete DevOps pipeline end-to-end.
-- Use platform-provided templates (CI/CD, Terraform module, Kubernetes manifests).
-- Deploy the sample application to Kubernetes with security scanning and observability.
-- Document the internal platform offering for future teams.
+**Duration:** 45 minutes guided (full version: 90 minutes self-paced)
+**Prerequisites:** Labs 00–08.
 
 ## Scenario
 
-You are the platform team. You have built a **golden path** for stream-aligned teams:
+You are the **platform team**. You have built a *golden path* for
+stream-aligned teams:
 
-- A reusable GitHub Actions workflow.
-- A reusable Terraform module.
-- A Kubernetes base layer with monitoring hooks.
-- A service request template.
+- A reusable GitHub Actions workflow (`.github/workflows/capstone.yml`).
+- A reusable Terraform module (`platform/terraform/`).
+- A Kubernetes overlay built on the Lab 06 base (`platform/k8s/`).
+- A service-request intake template (`template/service-request.md`).
 
-A development team wants to ship the order service. Your job is to run the golden path and hand over a working deployment.
+A development team wants to ship the order service. Run the golden path
+end-to-end on your VM and hand over a working deployment.
 
-## Part A — Review the Golden Path
+## Part A — Review the Golden Path (10 min)
 
-Open these files and read them:
+Open and skim these four files. For each, answer: *what does the consuming
+team NOT have to know because this exists?*
 
-- `labs/lab09-capstone/.github/workflows/capstone.yml` — CI/CD pipeline.
-- `labs/lab09-capstone/platform/terraform/main.tf` — reusable Terraform module.
-- `labs/lab09-capstone/platform/k8s/kustomization.yaml` — Kubernetes base.
-- `labs/lab09-capstone/template/service-request.md` — intake template.
+- `.github/workflows/capstone.yml` — test → build → scan (report + gate) →
+  deploy to a kind cluster on the runner.
+- `platform/terraform/main.tf` — the module a team calls with just an
+  environment name and image tags.
+- `platform/k8s/kustomization.yaml` — an **overlay** that reuses the Lab 06
+  manifests as a base and stamps platform labels + capstone image tags.
+- `template/service-request.md` — the intake contract.
 
-## Part B — Run the Capstone Locally
+## Part B — Run the Golden Path (15 min)
 
-A helper script simulates the full pipeline on your machine:
+One script simulates the whole pipeline locally:
 
 ```bash
 cd labs/lab09-capstone
-chmod +x run-capstone.sh
 ./run-capstone.sh
 ```
 
-The script will:
+It runs the tests, builds both images, Trivy-scans, creates (or reuses) the
+kind cluster with the course config, loads images, applies the overlay,
+waits for rollout, and smoke-tests **http://localhost:30080**.
 
-1. Run Python tests.
-2. Build Docker images tagged `capstone`.
-3. Scan the order image with Trivy (if installed).
-4. Create a kind cluster named `devops-course` if it does not exist.
-5. Load images into the cluster.
-6. Apply the Kubernetes manifests.
-7. Smoke-test the deployment via port-forward.
+Expected final output: a JSON health response with `build_id: "capstone"`
+and an order creation with payment `approved`.
 
-You should see a JSON health response and an order creation response.
-
-## Part C — Verify in Kubernetes
+## Part C — Verify in Kubernetes (5 min)
 
 ```bash
 kubectl get all
-kubectl logs -l app=order-service --tail=20
-kubectl logs -l app=payment-service --tail=20
+kubectl get deploy order-service -o jsonpath='{.metadata.labels}' ; echo
+# note both the lab06 base labels AND the platform overlay labels
+kubectl logs -l app=order-service --tail=10
 ```
 
-## Part D — Add Observability
+## Part D — Platform Handover Document (15 min)
 
-Reuse the Prometheus and Grafana stack from Lab 08. Update the scrape config to target the Kubernetes services, or add the Prometheus annotations to the Kubernetes manifests.
+Create `PLATFORM-HANDOVER.md` explaining how a new stream-aligned team
+consumes the golden path. Required sections:
 
-Example annotation for the order deployment:
-
-```yaml
-metadata:
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8000"
-    prometheus.io/path: "/metrics"
-```
-
-## Part E — Platform Handover Document
-
-Create `PLATFORM-HANDOVER.md` that explains how a new stream-aligned team would consume the golden path. Include:
-
-1. **Onboarding checklist** — what the team needs (repo access, cluster namespace, SLO targets).
-2. **How to raise a new service** — use `template/service-request.md`.
-3. **How to deploy** — commit to `main`; the pipeline tests, scans and deploys.
-4. **Support model** — platform team office hours, escalation path.
-5. **Success metrics** — deployment frequency, lead time, change failure rate.
+1. **Onboarding checklist** — repo access, cluster namespace, SLO targets.
+2. **How to request a service** — point at `template/service-request.md`.
+3. **How to deploy** — commit to `main`; pipeline tests, scans, gates, deploys.
+4. **Support model** — office hours, escalation path.
+5. **Success metrics** — the four DORA metrics + platform adoption.
 
 ## Expected Output
 
-- A working order service running in kind.
-- A completed `PLATFORM-HANDOVER.md`.
-- Pipeline logs or script output showing test, build, scan and deploy stages.
+- Order service running in kind, reachable at `http://localhost:30080`.
+- `PLATFORM-HANDOVER.md` with the five sections.
+- You can narrate every pipeline stage from memory — that narration IS the
+  course summary.
 
 ## Verification Checklist
 
 - [ ] `./run-capstone.sh` completes without errors.
-- [ ] `kubectl get pods` shows Running and Ready pods.
-- [ ] Port-forwarded `/health` returns JSON.
-- [ ] POST `/orders` returns an order with payment details.
-- [ ] `PLATFORM-HANDOVER.md` is created and contains the five required sections.
-- [ ] (Optional) Prometheus scrapes the Kubernetes services.
+- [ ] Pods Running and Ready; overlay labels present.
+- [ ] `http://localhost:30080/health` returns `build_id: "capstone"`.
+- [ ] POST `/orders` returns payment `approved`.
+- [ ] `PLATFORM-HANDOVER.md` complete.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| Script fails at tests | Return to Lab 00 and ensure `pytest` works in `labs/app`. |
-| kind cluster already exists | Delete it: `kind delete cluster --name devops-course` or let the script reuse it. |
-| ImagePullBackOff | Images were not loaded; run `kind load docker-image` manually. |
-| Port-forward conflict | Change the local port in the script or stop other services on port 8080. |
+| Script fails at tests | `labs/app/.venv` missing — re-run Lab 00 Part A. |
+| `localhost:30080` refused | Cluster exists but was created without the course config: `kind delete cluster --name devops-course` and re-run the script. |
+| `ImagePullBackOff` | Re-run the script; it reloads images into kind. |
+| Rollout timeout | `kubectl describe pod ...` — usually VM memory pressure; close other stacks (`docker compose down` in labs 03/08). |
 
-## Stretch Goal
+## Stretch Goals
 
-Split the monolithic pipeline into separate workflows triggered by different events:
-
-- `test.yml` on every pull request.
-- `build-and-scan.yml` on merge to `main`.
-- `deploy.yml` triggered only after the build workflow succeeds and a manual approval is given.
-
-This demonstrates environments and deployment gates.
+1. **Observability hook:** re-deploy the Lab 08 Prometheus stack and add
+   scrape annotations to the deployments, or a scrape config for
+   `host.docker.internal:30080`.
+2. **Split the pipeline** into `test.yml` (every PR), `build-and-scan.yml`
+   (merge to `main`), and `deploy.yml` (manual approval via environments) —
+   deployment gates in practice.
+3. **Terraform path:** deploy the same app with the platform module instead
+   of Kubernetes: `cd platform/terraform && terraform init && terraform apply
+   -var environment=capstone -var order_image=order-service:capstone -var
+   payment_image=payment-service:capstone`.

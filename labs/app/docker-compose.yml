@@ -1,0 +1,42 @@
+# Two-service stack for Lab 03.
+# The order service is published on localhost:8080; the payment service is
+# reachable only inside the Compose network by its DNS name "payment-service".
+
+services:
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_ID: ${BUILD_ID:-compose-local}
+    image: order-service:compose
+    ports:
+      - "8080:8000"
+    environment:
+      APP_ENV: compose
+      BUILD_ID: ${BUILD_ID:-compose-local}
+      PAYMENT_SERVICE_URL: http://payment-service:8000
+    depends_on:
+      payment-service:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.payment
+      args:
+        BUILD_ID: ${BUILD_ID:-compose-local}
+    image: payment-service:compose
+    # No "ports:" here on purpose: the payment service is internal-only,
+    # and omitting a host port also allows "--scale payment-service=2".
+    environment:
+      APP_ENV: compose
+      BUILD_ID: ${BUILD_ID:-compose-local}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

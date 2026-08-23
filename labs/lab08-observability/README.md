@@ -1,44 +1,44 @@
 # Lab 08 — Observability & Reliability
 
-**Duration:** 75 minutes  
-**Prerequisites:** Labs 00–03 and updated app with Prometheus metrics.
+**Duration:** 60 minutes + 15 minute game day
+**Prerequisites:** Labs 00–03.
+
+All UIs run on **localhost of your Ubuntu VM**: Prometheus on
+`http://localhost:9090`, Grafana on `http://localhost:3000` — open them in
+the VM's browser.
 
 ## Objectives
 
 - Run Prometheus and Grafana locally with Docker Compose.
-- Scrape application metrics from the `/metrics` endpoint.
-- Build a simple dashboard and define an SLO.
+- Scrape application metrics from `/metrics` and query them with PromQL.
+- Build a dashboard, define an SLO, and respond to a live incident.
 
 ## Part A — Start the Observability Stack
 
-The app was updated to expose Prometheus-format metrics on `/metrics`. It also tracks request counts and durations via middleware.
-
-From `labs/lab08-observability`:
+The sample app exposes Prometheus metrics on `/metrics` — request counts and
+durations recorded by a middleware (open `labs/app/main.py` and find the
+`Counter`, the `Histogram` and the `@app.middleware("http")` function; you
+will extend this in the stretch goal).
 
 ```bash
+cd labs/lab08-observability
 docker compose -f docker-compose.observability.yml up -d --build
-```
-
-Check that all containers are running:
-
-```bash
 docker compose -f docker-compose.observability.yml ps
 ```
 
-## Part B — Verify Metrics Endpoints
+## Part B — Verify the Metrics Endpoints
 
 ```bash
-curl http://localhost:8080/metrics | grep order_requests_total
-curl http://localhost:8001/metrics | grep payment_requests_total
+curl -s http://localhost:8080/metrics | grep order_requests_total
+curl -s http://localhost:8001/metrics | grep payment_requests_total
 ```
 
-You should see Prometheus exposition output with counters and histograms.
+You should see Prometheus exposition format: counters with
+`method`/`endpoint`/`status` labels, plus histogram buckets.
 
 ## Part C — Explore Prometheus
 
-Open http://localhost:9090.
-
-Run these queries:
+Open **http://localhost:9090** in the VM browser and run:
 
 ```promql
 order_requests_total
@@ -46,49 +46,70 @@ rate(order_requests_total[1m])
 order_request_duration_seconds_bucket
 ```
 
-Confirm that both `order-service` and `payment-service` targets are up:
-
-```bash
-# In Prometheus UI: Status → Targets
-# Both should be green.
-```
+Then check **Status → Targets**: `order-service`, `payment-service` and
+`prometheus` should all be **UP**.
 
 ## Part D — Generate Traffic
 
-Run a small load script to populate metrics:
-
 ```bash
-for i in {1..30}; do
+for i in {1..50}; do
   curl -s -X POST http://localhost:8080/orders \
     -H "Content-Type: application/json" \
     -d '{"item":"mocha","quantity":1,"price":5.0}' > /dev/null
 done
 ```
 
-Return to Prometheus and re-run the rate query. You should see non-zero values.
+Re-run the `rate(...)` query — non-zero now.
 
 ## Part E — Grafana Dashboard
 
-Open http://localhost:3000 and log in with `admin/admin`.
+Open **http://localhost:3000** (login `admin` / `admin`; the Prometheus
+datasource is pre-provisioned).
 
-1. Navigate to **Explore**.
-2. Select the Prometheus datasource.
-3. Create a new dashboard with two panels:
-   - **Request rate**: `rate(order_requests_total[1m])`
-   - **Request duration (p95)**: `histogram_quantile(0.95, rate(order_request_duration_seconds_bucket[1m]))`
-4. Save the dashboard as "Order Service Overview".
+Create a dashboard with two panels:
+
+- **Request rate:** `sum(rate(order_requests_total[1m]))`
+- **p95 latency:** `histogram_quantile(0.95, sum(rate(order_request_duration_seconds_bucket[1m])) by (le))`
+
+Save it as **"Order Service Overview"**.
 
 ## Part F — SLO Exercise
 
-Open `slo.md` and discuss:
+Open `slo.md`. It defines a 99% SLO, the SLI query (note `/health` is
+excluded — discuss why), the error budget, and **burn-rate alerts** instead
+of naive threshold alerts. Answer the three discussion questions in a new
+`slo-discussion.md`.
 
-- Is 99% availability realistic for this lab service?
-- What would an error budget policy look like?
-- What alert threshold would wake the on-call engineer without causing alert fatigue?
+## Part G — Mini Game Day 🔥
 
-Write your answers in a new file `slo-discussion.md`.
+Your instructor (or your neighbour) will now **break the system** — for
+example:
 
-## Part G — Clean Up
+```bash
+# saboteur runs ONE of these, without telling you which:
+docker stop payment-service-obs
+# or
+docker pause payment-service-obs
+```
+
+Your job, using only observability tools (no peeking at the saboteur's
+terminal):
+
+1. Generate a few orders (Part D loop) and *notice* the symptom — payment
+   status becomes `unavailable`.
+2. Localise it: which Prometheus target is down? What does
+   `rate(order_requests_total{endpoint="/orders"}[1m])` show vs the payment
+   service's metrics?
+3. Confirm with logs: `docker compose -f docker-compose.observability.yml logs payment-service`
+4. Restore service (`docker start` / `docker unpause`) and verify recovery
+   in Grafana.
+5. Write a **5-line blameless postmortem** in `postmortem.md`: what happened,
+   how it was detected, time to detect, time to recover, one improvement.
+
+This is the incident lifecycle from the slides — detect → diagnose →
+mitigate → learn — at lab scale.
+
+## Part H — Clean Up
 
 ```bash
 docker compose -f docker-compose.observability.yml down --volumes
@@ -96,28 +117,36 @@ docker compose -f docker-compose.observability.yml down --volumes
 
 ## Expected Output
 
-- Prometheus targets page shows order and payment services up.
-- Grafana renders request rate and duration panels.
-- `slo-discussion.md` contains team answers.
+- Prometheus shows all targets UP; Grafana panels render live data.
+- `slo-discussion.md` and `postmortem.md` written.
 
 ## Verification Checklist
 
-- [ ] Compose stack starts without errors.
-- [ ] `/metrics` returns Prometheus format.
-- [ ] Prometheus shows both targets healthy.
-- [ ] Grafana login works.
-- [ ] Dashboard panels display data after load test.
-- [ ] SLO discussion documented.
+- [ ] Both `/metrics` endpoints return Prometheus format.
+- [ ] All Prometheus targets UP.
+- [ ] Dashboard shows request rate and p95 after the load loop.
+- [ ] Game-day incident detected, diagnosed, and recovered using the tools.
+- [ ] Postmortem written — blameless.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| Prometheus shows no targets | Check `prometheus.yml` hostnames match service names in the compose network. |
-| Grafana cannot reach Prometheus | Ensure both are on the same Docker network. |
-| Metrics endpoint returns JSON | You may be running an older app image; rebuild with `--build`. |
-| No data in panels | Verify the time range in Grafana and that traffic was generated. |
+| No targets in Prometheus | Hostnames in `prometheus.yml` must match the Compose service names. |
+| Grafana cannot reach Prometheus | Both must be on `obs-network`; `docker network inspect lab08-observability_obs-network`. |
+| No data in panels | Check the Grafana time range (last 15 min) and re-run the traffic loop. |
+| Ports 3000/9090 in use | Stop the conflicting service or remap in the compose file. |
 
-## Stretch Goal
+## Stretch Goal — Instrument Your Own Metric
 
-Add a Loki container and configure the app to log to JSON. Create a Grafana panel that correlates error logs with high latency metrics.
+Add a business metric to `labs/app/main.py`:
+
+```python
+ORDER_VALUE = Counter("order_value_total", "Cumulative value of orders")
+# in create_order(), after computing total:
+ORDER_VALUE.inc(total)
+```
+
+Rebuild (`docker compose -f docker-compose.observability.yml up -d --build`),
+generate traffic, and graph `rate(order_value_total[5m])` — revenue per
+second. Observability is for **business** questions, not just CPU.

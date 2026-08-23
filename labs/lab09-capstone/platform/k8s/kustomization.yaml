@@ -1,10 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# The Lab 06 manifests are consumed as a BASE (a directory, as Kustomize
+# requires for resources outside this root). The capstone is an OVERLAY that
+# retags the images and adds platform labels — the golden-path pattern.
 resources:
-  - ../../../lab06-kubernetes-kind/configmap.yaml
-  - ../../../lab06-kubernetes-kind/deployment-payment.yaml
-  - ../../../lab06-kubernetes-kind/deployment-order.yaml
+  - ../../../lab06-kubernetes-kind
 
 images:
   - name: order-service
@@ -12,6 +13,9 @@ images:
   - name: payment-service
     newTag: capstone
 
-commonLabels:
-  platform: course-golden-path
-  environment: capstone
+labels:
+  - pairs:
+      platform: course-golden-path
+      environment: capstone
+    includeSelectors: false
+    includeTemplates: true

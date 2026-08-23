@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 venv/
 ENV/
+.pytest_cache/
 
 # IDE
 .idea/
@@ -12,12 +13,14 @@ ENV/
 *.swp
 
 # Terraform
+# NOTE: .terraform.lock.hcl is deliberately COMMITTED (reproducible provider
+# versions are a Terraform best practice taught in Lab 05).
 .terraform/
 *.tfstate
-*.tfstate.*.backup
-*.tfstate.backup
+*.tfstate.*
 *.tfplan
-.terraform.lock.hcl
+tfplan
+terraform.tfvars
 
 # Kubernetes / Docker
 *.tar
@@ -25,6 +28,9 @@ ENV/
 
 # macOS
 .DS_Store
+
+# Generated at run time
+lab-command-report.md
 
 # Verification tooling binaries (downloaded on demand by verify/prepare-binaries.sh)
 verify/bin/

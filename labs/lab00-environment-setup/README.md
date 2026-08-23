@@ -1,133 +1,85 @@
-# Lab 00 — Environment Setup
+# Lab 00 — Environment Setup & Verification
 
-**Duration:** 45 minutes  
-**Prerequisites:** A laptop with internet access and administrator rights.
+**Duration:** 30 minutes
+**Environment:** your personal **Ubuntu 24.04 VM**. Every lab in this course
+runs on this VM and every URL is `http://localhost:...` on it.
+**Prerequisites:** sudo rights on the VM and internet access.
 
 ## Objectives
 
-- Verify or install the toolchain used in the course.
-- Confirm Docker, Git, Python and Kubernetes tools are working.
-- Build and run the sample app locally to validate your environment.
+- Install (or verify) the complete course toolchain **with one script**.
+- Prove the environment works with the automated preflight check.
+- Run the sample application natively and call it on localhost.
+- Learn the two terminal habits used all course: `tmux` and `curl`.
 
-## Required Software
+## Part A — Install the Toolchain (one script)
 
-| Tool                | Minimum Version | Purpose                              |
-|---------------------|-----------------|--------------------------------------|
-| Git                 | 2.40            | Source control                       |
-| Docker Desktop / Engine | 24.x        | Container runtime                    |
-| Docker Compose      | 2.20            | Multi-container local orchestration  |
-| kind                | 0.22            | Local Kubernetes cluster             |
-| kubectl             | 1.28            | Kubernetes CLI                       |
-| Terraform           | 1.6             | Infrastructure as Code               |
-| Python              | 3.10            | Sample app runtime                   |
-| VS Code (recommended) | latest        | Editor and terminal                  |
-
-## Installation Instructions
-
-### macOS (Homebrew)
+Everything the course needs is installed by a single script. If your
+instructor pre-provisioned the VM this has already been run — skip to Part B.
 
 ```bash
-brew install git docker --cask docker
-brew install docker-compose kind kubectl terraform python
+cd ~/devopsplatformengr        # wherever you cloned the course repository
+./lab-setup/install-ubuntu24.sh
 ```
 
-> **Note:** Docker Desktop must be launched from Applications after installation.
+The script installs: Git, Docker Engine + Compose plugin, kind, kubectl,
+Terraform, Trivy, Conftest, tmux, jq, Python 3 with the sample-app virtual
+environment in `labs/app/.venv`.
 
-### Windows (winget)
+> **Important:** the script adds you to the `docker` group. Group membership
+> only applies to **new** sessions — log out and back in, or run:
+>
+> ```bash
+> newgrp docker
+> ```
 
-```powershell
-winget install Git.Git
-winget install Docker.DockerDesktop
-winget install Kubernetes.kind
-winget install Kubernetes.kubectl
-winget install Hashicorp.Terraform
-winget install Python.Python.3.12
-```
-
-### Linux (Ubuntu 24.04 LTS recommended)
-
-These instructions are tested on the latest Ubuntu LTS release (Noble 24.04) and should also work on recent Debian-based distributions.
-
-For a one-shot Ubuntu 24.04 setup, run the lab-local helper script:
+Preview what the script would do without changing anything:
 
 ```bash
-cd labs/lab00-environment-setup
-chmod +x setup-ubuntu24.sh
-./setup-ubuntu24.sh
+./lab-setup/install-ubuntu24.sh --dry-run
 ```
 
-This wrapper calls the repository installer in `lab-setup/install-ubuntu24.sh` and installs the base tooling, Docker Engine with the Compose plugin, kind, kubectl, Terraform, and the sample app dependencies in `labs/app/.venv`.
+## Part B — Preflight Check
 
-If you prefer the manual steps, use the following commands:
+One command tells you whether you are ready for the whole course:
 
 ```bash
-# Update package index and install base tooling
-sudo apt-get update
-sudo apt-get install -y git curl ca-certificates gnupg lsb-release
-
-# Docker Engine and Docker Compose v2 plugin
-sudo apt-get install -y docker.io docker-compose-v2
-sudo systemctl enable --now docker
-sudo usermod -aG docker "$USER"
-# Log out and back in for the docker group to take effect.
-
-# kind
-ARCH=$(dpkg --print-architecture)
-curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-${ARCH}"
-chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
-
-# kubectl
-curl -LO "https://dl.k8s/release/$(curl -L -s https://dl.k8s/release/stable.txt)/bin/linux/${ARCH}/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-rm kubectl
-
-# terraform
-curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt-get update && sudo apt-get install -y terraform
+./lab-setup/check-environment.sh
 ```
 
-## Verification Steps
+Expected: a table where every required row shows **PASS**, ending with
+`RESULT: all required checks passed`. If anything shows FAIL, fix it now —
+every later lab depends on this.
 
-Run each command and confirm the output looks similar.
+## Part C — Two Terminals with tmux
+
+Many labs need one terminal running a server and another running `curl`.
+On this VM we use `tmux`:
 
 ```bash
-# Git
-git --version
-# Expected: git version 2.40.x or higher
-
-# Docker
-docker --version
-docker run --rm hello-world
-
-# Docker Compose
-docker compose version
-
-# kind
-kind version
-
-# kubectl
-kubectl version --client
-
-# Terraform
-terraform -version
-
-# Python and pip
-python3 --version
-python3 -m pip --version
+tmux new -s lab
 ```
 
-## Run the Sample App Natively
+| Keys | Action |
+|------|--------|
+| `Ctrl+b` then `%` | Split the window into two panes |
+| `Ctrl+b` then `←`/`→` | Move between panes |
+| `Ctrl+b` then `d` | Detach (session keeps running) |
+| `tmux attach -t lab` | Re-attach |
+
+Keep this session open — you will use both panes in Part D.
+
+## Part D — Run the Sample App Natively
+
+In the **left pane**:
 
 ```bash
 cd labs/app
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+source .venv/bin/activate
+uvicorn main:app --port 8000
 ```
 
-In another terminal:
+In the **right pane**:
 
 ```bash
 curl http://localhost:8000/health
@@ -136,40 +88,50 @@ curl http://localhost:8000/health
 curl -X POST http://localhost:8000/orders \
   -H "Content-Type: application/json" \
   -d '{"item":"coffee","quantity":2,"price":3.5}'
+# Expected: an order with a payment status of "unavailable"
+# (the payment service is not running yet — that is Lab 03's job)
 ```
 
-Stop the server with `Ctrl+C`.
-
-## Create a kind Cluster (Preview)
+Run the unit tests, then stop the server with `Ctrl+C` in the left pane:
 
 ```bash
-kind create cluster --name devops-course
+cd labs/app && source .venv/bin/activate
+pytest
+# Expected: 5 passed
+```
+
+## Part E — Kubernetes Preview
+
+```bash
+kind create cluster --name devops-course --config labs/lab06-kubernetes-kind/kind-config.yaml
 kubectl get nodes
 # Expected: one Ready control-plane node
 kind delete cluster --name devops-course
 ```
 
-## Troubleshooting
-
-| Symptom | Likely Fix |
-|---------|------------|
-| `docker: Cannot connect to daemon` | Start Docker Desktop / service: `sudo systemctl start docker` |
-| `kind create cluster` hangs | Ensure Docker has at least 4 GB RAM allocated. |
-| `terraform` not found | Reinstall or add to PATH; use `tfenv` for version management. |
-| Port 8000 already in use | Kill the process or run on a different port (`--port 8080`). |
-
 ## Completion Checklist
 
-- [ ] All tools installed and versions verified.
-- [ ] `docker run hello-world` succeeded.
-- [ ] Sample app responds to `/health` and `/orders`.
-- [ ] A kind cluster was created and deleted successfully.
+- [ ] `check-environment.sh` reports all required checks PASS.
+- [ ] Sample app responds on `http://localhost:8000/health`.
+- [ ] `pytest` reports 5 passed.
+- [ ] A kind cluster was created and deleted.
+- [ ] You can split, switch and detach tmux panes.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `permission denied` on `docker ...` | You are not in the `docker` group yet: `newgrp docker`, or log out/in. |
+| `docker: Cannot connect to daemon` | `sudo systemctl start docker` |
+| `kind create cluster` hangs | Check VM resources: `free -h` (needs ~6 GB RAM) and `df -h /` (needs ~15 GB free). |
+| Port 8000 already in use | `sudo ss -ltnp 'sport = :8000'` to find the process, or use `--port 8080`. |
+| `pytest: command not found` | Activate the venv first: `source labs/app/.venv/bin/activate`. |
 
 ## Stretch Goal
 
-Install `act` so you can run GitHub Actions workflows locally:
+Install `act` to run GitHub Actions workflows locally in Lab 04:
 
 ```bash
-brew install act        # macOS
-choco install act-cli   # Windows
+curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
+act --version
 ```

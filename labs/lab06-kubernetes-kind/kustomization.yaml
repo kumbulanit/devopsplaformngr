@@ -6,6 +6,12 @@ resources:
   - deployment-payment.yaml
   - deployment-order.yaml
 
-commonLabels:
-  course: devops-platform-engineering
-  environment: lab06
+# "labels" replaces the deprecated "commonLabels".
+# includeSelectors: false keeps these labels OUT of the immutable
+# spec.selector, so re-applying with different labels never conflicts.
+labels:
+  - pairs:
+      course: devops-platform-engineering
+      environment: lab06
+    includeSelectors: false
+    includeTemplates: true

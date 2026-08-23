@@ -6,9 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege token: this workflow only needs to read the repository.
+permissions:
+  contents: read
+
 env:
   IMAGE_NAME: order-service
-  REGISTRY: ghcr.io
 
 jobs:
   test:
@@ -25,7 +28,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r labs/app/requirements.txt
-          pip install pytest
 
       - name: Run tests
         working-directory: labs/app
@@ -50,7 +52,7 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
     steps:
       - uses: actions/checkout@v4
 
@@ -58,10 +60,24 @@ jobs:
         working-directory: labs/app
         run: docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} -f Dockerfile .
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      # Step 1 — REPORT: list HIGH and CRITICAL findings but never fail the
+      # build (exit-code: 0). Useful for visibility while a team triages.
+      - name: Trivy report (informational)
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           format: table
-          exit-code: 0
+          exit-code: "0"
           severity: CRITICAL,HIGH
+
+      # Step 2 — GATE: fail the pipeline on any FIXABLE CRITICAL finding.
+      # This is what "security gate" actually means: the build goes red.
+      # --ignore-unfixed skips CVEs with no released patch (nothing to action).
+      - name: Trivy gate (fails on fixable CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+          ignore-unfixed: true

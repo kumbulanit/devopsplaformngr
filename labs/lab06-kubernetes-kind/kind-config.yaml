@@ -1,0 +1,12 @@
+# kind cluster configuration for the course.
+# extraPortMappings forwards localhost:30080 on the Ubuntu VM to NodePort
+# 30080 inside the kind node, so the order-service NodePort Service is
+# reachable at http://localhost:30080 without kubectl port-forward.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+        protocol: TCP

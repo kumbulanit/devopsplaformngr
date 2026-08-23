@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   ORDER_IMAGE: order-service
   PAYMENT_IMAGE: payment-service
@@ -18,9 +21,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies
-        run: |
-          pip install -r labs/app/requirements.txt
-          pip install pytest
+        run: pip install -r labs/app/requirements.txt
       - name: Run tests
         working-directory: labs/app
         run: pytest
@@ -34,33 +35,45 @@ jobs:
       - name: Build images
         working-directory: labs/app
         run: |
-          docker build -t ${{ env.ORDER_IMAGE }}:${{ github.sha }} -f Dockerfile .
-          docker build -t ${{ env.PAYMENT_IMAGE }}:${{ github.sha }} -f Dockerfile.payment .
-      - name: Upload images as artifacts
-        uses: actions/upload-artifact@v4
+          docker build -t ${{ env.ORDER_IMAGE }}:${{ github.sha }} --build-arg BUILD_ID=${{ github.sha }} -f Dockerfile .
+          docker build -t ${{ env.PAYMENT_IMAGE }}:${{ github.sha }} --build-arg BUILD_ID=${{ github.sha }} -f Dockerfile.payment .
+      # In a real pipeline you would push both images to a registry here
+      # (see the Lab 04 stretch goal for the GHCR login pattern). Saving them
+      # as workflow artifacts keeps the capstone free of registry credentials.
+      - name: Save images as artifacts
+        run: |
+          docker save ${{ env.ORDER_IMAGE }}:${{ github.sha }} -o order-image.tar
+          docker save ${{ env.PAYMENT_IMAGE }}:${{ github.sha }} -o payment-image.tar
+      - uses: actions/upload-artifact@v4
         with:
           name: images
           path: |
-            /tmp/order-image.tar
-            /tmp/payment-image.tar
-        # In a real pipeline you would push to a registry. Artifacts are used here for portability.
+            order-image.tar
+            payment-image.tar
+          retention-days: 1
 
   security:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Build images for scan
-        working-directory: labs/app
-        run: |
-          docker build -t ${{ env.ORDER_IMAGE }}:${{ github.sha }} -f Dockerfile .
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@master
+      - uses: actions/download-artifact@v4
+        with:
+          name: images
+      - name: Load images
+        run: docker load -i order-image.tar
+      - name: Trivy report (informational)
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.ORDER_IMAGE }}:${{ github.sha }}
           severity: CRITICAL,HIGH
-          exit-code: 0
+          exit-code: "0"
+      - name: Trivy gate (fails on fixable CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.ORDER_IMAGE }}:${{ github.sha }}
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -68,11 +81,36 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
+      - uses: actions/download-artifact@v4
         with:
-          version: "v1.30.0"
-      - name: Deploy to Kubernetes
+          name: images
+      # A real deployment would target a long-lived cluster. GitHub-hosted
+      # runners are ephemeral, so this job PROVES the golden path by standing
+      # up a kind cluster, deploying the overlay, and smoke-testing it —
+      # the same steps run-capstone.sh performs on your Ubuntu VM.
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: capstone
+      - name: Load images into kind
         run: |
-          echo "In a real environment this step applies manifests to the target cluster."
-          echo "For the capstone lab, run labs/lab09-capstone/run-capstone.sh locally."
+          docker load -i order-image.tar
+          docker load -i payment-image.tar
+          docker tag ${{ env.ORDER_IMAGE }}:${{ github.sha }} ${{ env.ORDER_IMAGE }}:capstone
+          docker tag ${{ env.PAYMENT_IMAGE }}:${{ github.sha }} ${{ env.PAYMENT_IMAGE }}:capstone
+          kind load docker-image ${{ env.ORDER_IMAGE }}:capstone --name capstone
+          kind load docker-image ${{ env.PAYMENT_IMAGE }}:capstone --name capstone
+      - name: Deploy overlay
+        run: kubectl apply -k labs/lab09-capstone/platform/k8s
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/order-service --timeout=120s
+          kubectl rollout status deployment/payment-service --timeout=120s
+      - name: Smoke test
+        run: |
+          kubectl port-forward svc/order-service 8080:8000 &
+          sleep 3
+          curl -fs http://localhost:8080/health
+          curl -fs -X POST http://localhost:8080/orders \
+            -H "Content-Type: application/json" \
+            -d '{"item":"capstone-coffee","quantity":1,"price":6.0}'

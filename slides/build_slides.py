@@ -235,6 +235,13 @@ DAY1_MODULES = [
                 "notes": "A useful phrase: 'DevOps is the what and why; platform engineering is the how at scale.' Mention Team Topologies: platform teams should reduce, not increase, cognitive load."
             },
             {
+                "type": "diagram",
+                "title": "Your Lab Environment for These Two Days",
+                "image": "11-course-lab-topology",
+                "caption": "One Ubuntu 24.04 VM per participant — every lab runs on its localhost.",
+                "notes": "Orient participants: native Python (Lab 00), Docker Compose stacks (Labs 03/08), Terraform-managed containers (Lab 05) and a kind Kubernetes cluster (Labs 06/09) all live on one VM. Every URL in the course is http://localhost:<port>. No cloud account and no shared infrastructure - and full cleanup is one command per stack. The workflow, not the infrastructure, is what transfers to production."
+            },
+            {
                 "type": "quote",
                 "title": "Key Takeaway",
                 "quote": "Platform engineering turns DevOps from a heroic individual effort into a repeatable, scalable organisational capability.",
@@ -379,6 +386,25 @@ DAY1_MODULES = [
                 "notes": "In cloud-native environments, configuration management is shrinking because containers and Kubernetes handle much of it. Still useful for bare metal and VMs."
             },
             {
+                "type": "two_col",
+                "title": "Provisioning vs Configuration Management",
+                "left": [
+                    "TERRAFORM (provisioning)",
+                    "Creates and destroys infrastructure: networks, VMs, containers, DNS.",
+                    "Declarative HCL; state file tracks what exists.",
+                    "plan shows the diff before anything changes.",
+                    "Lab 05: provisions our two services on local Docker.",
+                ],
+                "right": [
+                    "ANSIBLE (configuration management)",
+                    "Configures existing machines: packages, files, services, users.",
+                    "Declarative YAML tasks; idempotent modules, no state file.",
+                    "--check --diff previews changes; second run reports changed=0.",
+                    "Lab 05 bonus: configures your own VM over the local connection.",
+                ],
+                "notes": "Both are IaC, answering different questions: Terraform answers 'what infrastructure exists?', Ansible answers 'how is each machine configured?'. Real estates use both: Terraform creates the VM, Ansible (or a container image) configures it. The bonus playbook demonstrates idempotence - the property that makes IaC safe to re-run - on the participant's own VM with no SSH or inventory needed."
+            },
+            {
                 "type": "content",
                 "title": "IaC Best Practices",
                 "bullets": [
@@ -414,6 +440,25 @@ DAY1_MODULES = [
                 "image": "02-cicd-pipeline",
                 "caption": "From commit through production, with feedback and rollback loops.",
                 "notes": "Trace the arrows. Security scans sit in the middle because they must be fast enough not to break flow. Feedback loops allow rollbacks and fix-forward."
+            },
+            {
+                "type": "content",
+                "title": "A Scan Is Not a Gate",
+                "bullets": [
+                    "Report step: scan results are visible, but the build stays green (exit-code 0).",
+                    "Gate step: the build FAILS on findings you can act on (exit-code 1).",
+                    "Gate on FIXABLE criticals - failing on unfixable CVEs just trains people to ignore red.",
+                    "Pin third-party pipeline actions to versions, never a moving branch.",
+                    "Give the pipeline token least privilege (permissions: contents: read).",
+                ],
+                "notes": "This is the single most common CI security mistake: a scan step that can never fail the build looks like a control but changes nothing. In Lab 04 the workflow runs Trivy twice - once as a report (severity HIGH+CRITICAL, exit-code 0) and once as a gate (CRITICAL only, ignore-unfixed, exit-code 1). Discuss what belongs in a gate on day one versus after a triage period. The pinned action version and least-privilege token are supply-chain hygiene participants should copy into every workflow they write."
+            },
+            {
+                "type": "diagram",
+                "title": "Measuring Delivery: The Four DORA Metrics",
+                "image": "12-dora-metrics",
+                "caption": "Two throughput metrics, two stability metrics - always read together.",
+                "notes": "DORA research (Accelerate, State of DevOps reports) shows speed and stability are not a trade-off: elite performers are better at both, because small automated changes are both faster and safer. Use all four together - optimising deployment frequency alone is gamed easily and shows up in change failure rate. These metrics measure the system, not individuals; never use them for performance reviews or they will be gamed. The capstone handover document asks teams to track these for services on the golden path."
             },
             {
                 "type": "content",
@@ -605,6 +650,18 @@ DAY2_MODULES = [
                     "Celebrate the response as well as diagnosing the cause."
                 ],
                 "notes": "If the culture punishes people for incidents, information will be hidden and learning will stop. Safety is the prerequisite for improvement."
+            },
+            {
+                "type": "content",
+                "title": "Game Days: Practise Before It Hurts",
+                "bullets": [
+                    "A game day is a rehearsed incident: someone breaks a system on purpose.",
+                    "Responders use only their observability tools - no peeking at the cause.",
+                    "Measures the real MTTD and MTTR of your tooling and your team.",
+                    "Ends with the same blameless postmortem as a real incident.",
+                    "Lab 08 Part G: your neighbour stops the payment service - find it, fix it, write it up.",
+                ],
+                "notes": "Game days convert incident response from theory into muscle memory. In the lab version the saboteur stops or pauses the payment container; responders must notice the symptom (orders report payment unavailable), localise it via Prometheus targets and rates, confirm with logs, recover, and write a 5-line postmortem. Emphasise the discipline of using only the telemetry: if the tools cannot answer the question in the lab, they will not answer it at 3 a.m. either."
             }
         ]
     },
@@ -673,17 +730,48 @@ DAY2_MODULES = [
                 ],
                 "notes": "This scenario mirrors real platform engineering work: building paved roads that abstract complexity while preserving safety."
             },
+        ]
+    },
+    {
+        "section_title": "Module 11\nSummary and Next Steps",
+        "section_notes": "Close the course deliberately: recap what was built, hand participants a learning roadmap, and make the first week back at work concrete.",
+        "slides": [
             {
                 "type": "content",
-                "title": "Course Summary & Next Steps",
+                "title": "What You Built in Two Days",
                 "bullets": [
-                    "DevOps is culture + practices; platform engineering scales it through self-service.",
-                    "IaC, CI/CD, containers, security, observability and product thinking are the foundations.",
-                    "Start small: automate one painful path, measure it, then expand.",
-                    "Invest in reliability, learning and developer experience.",
-                    "Continue learning: DORA reports, Team Topologies, Platform Engineering books."
+                    "A microservice tested, containerised and orchestrated (Labs 00-03).",
+                    "A CI pipeline with a real security gate (Lab 04).",
+                    "Infrastructure declared as code, with drift detection (Lab 05).",
+                    "A Kubernetes deployment with probes, limits and rolling updates (Lab 06).",
+                    "Policies, scans, dashboards, an SLO - and one survived incident (Labs 07-08).",
+                    "A golden path handed over as a platform product (Lab 09).",
                 ],
-                "notes": "Close with recommended reading, communities and a feedback survey. Leave time for Q&A and certificate handover if applicable."
+                "notes": "Walk the list slowly - this is the payoff slide. Every item ran on the participant's own VM and every artifact is in the course repository they keep. Invite one or two participants to say which lab changed how they think about their current work."
+            },
+            {
+                "type": "content",
+                "title": "Continuing the Journey",
+                "bullets": [
+                    "Kubernetes: CKAD / CKA certifications; kind and minikube for practice.",
+                    "IaC: HashiCorp Terraform Associate; Ansible for configuration management.",
+                    "CI/CD: GitHub Actions docs and the 'act' local runner you already installed.",
+                    "Reading: Accelerate (DORA), Team Topologies, the Google SRE books (free online).",
+                    "Communities: platformengineering.org, CNCF projects, local DevOps meetups.",
+                ],
+                "notes": "Participants keep the slides, the labs and the sample application - everything reruns on any Ubuntu 24.04 machine via lab-setup/install-ubuntu24.sh. Encourage them to re-run the capstone from scratch within two weeks; retention comes from the second unaided repetition."
+            },
+            {
+                "type": "content",
+                "title": "Your First Week Back at Work",
+                "bullets": [
+                    "Pick ONE painful manual path and automate it end to end - small and finished beats big and abandoned.",
+                    "Add a real gate to an existing pipeline: tests or a fixable-critical scan.",
+                    "Write the first blameless postmortem after your next incident - share it.",
+                    "Measure a baseline: your team's deployment frequency and lead time this month.",
+                    "Start the platform conversation: which golden path would help most teams?",
+                ],
+                "notes": "End with commitments: ask each participant to write down the one action they will take in the first week and share it with the room. Hand out the feedback survey, answer final questions, and run the Day 2 quiz if not already done."
             }
         ]
     }

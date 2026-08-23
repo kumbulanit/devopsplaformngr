@@ -17,7 +17,7 @@ echo "===== Install Python dependencies in a venv ====="
 python3 -m venv .venv-ubuntu
 source .venv-ubuntu/bin/activate
 pip install --upgrade pip --quiet
-pip install -r labs/app/requirements.txt pytest python-pptx matplotlib --quiet
+pip install -r labs/app/requirements.txt -r slides/requirements-authoring.txt --quiet
 
 echo "===== Run unit tests ====="
 python3 -m pytest labs/app/test_app.py
@@ -88,26 +88,20 @@ cd /workspace
 
 echo "===== kind + Kubernetes smoke test ====="
 kind delete cluster --name ubuntu-course 2>/dev/null || true
-kind create cluster --name ubuntu-course
+kind create cluster --name ubuntu-course --config labs/lab06-kubernetes-kind/kind-config.yaml
 kind load docker-image order-service:lab02 --name ubuntu-course
 kind load docker-image payment-service:lab02 --name ubuntu-course
 
 cd labs/lab06-kubernetes-kind
 kubectl apply -k .
 echo "Waiting for deployments..."
-kubectl rollout status deployment/order-service
-kubectl rollout status deployment/payment-service
+kubectl rollout status deployment/order-service --timeout=180s
+kubectl rollout status deployment/payment-service --timeout=180s
 
-echo "===== Kubernetes smoke test ====="
-kubectl port-forward svc/order-service 18080:8000 &
-PF_PID=$!
-sleep 3
-kill_trap() {
-  kill "${PF_PID}" 2>/dev/null || true
-}
-trap kill_trap EXIT
-
-curl -s http://localhost:18080/health
+echo "===== Kubernetes smoke test (NodePort on localhost:30080) ====="
+sleep 2
+curl -fs http://localhost:30080/health
+echo
 kind delete cluster --name ubuntu-course
 
 echo "===== All Ubuntu verification checks passed ====="

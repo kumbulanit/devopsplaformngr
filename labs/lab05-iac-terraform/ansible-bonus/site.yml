@@ -1,0 +1,50 @@
+---
+# Bonus: configuration management with Ansible — the OTHER half of IaC.
+# Terraform PROVISIONS infrastructure (creates the containers); Ansible
+# CONFIGURES machines (packages, files, services). This playbook targets
+# the Ubuntu VM itself over the local connection — no SSH, no inventory
+# file needed. Run it twice to see idempotence: the second run changes
+# nothing ("changed=0").
+#
+#   ansible-playbook site.yml          # preview:  add --check --diff
+#
+- name: Configure this Ubuntu VM as a course workstation
+  hosts: localhost
+  connection: local
+  become: true
+
+  vars:
+    motd_message: |
+      *** DevOps & Platform Engineering course VM ***
+      Managed by Ansible — manual changes here will be overwritten.
+
+  tasks:
+    - name: Ensure useful CLI tools are installed
+      ansible.builtin.apt:
+        name:
+          - htop
+          - tree
+          - ncdu
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Set the message of the day
+      ansible.builtin.copy:
+        content: "{{ motd_message }}"
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Ensure Docker service is enabled and running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Record when this VM was last configured
+      ansible.builtin.copy:
+        content: "configured by ansible for the devops course\n"
+        dest: /etc/course-configured
+        mode: "0644"

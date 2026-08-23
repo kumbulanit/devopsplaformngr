@@ -14,6 +14,10 @@ spec:
       labels:
         app: payment-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: payment
           image: payment-service:lab02
@@ -23,9 +27,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: app-config
-          env:
-            - name: BUILD_ID
-              value: "k8s-payment"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               memory: "64Mi"

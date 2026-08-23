@@ -1,0 +1,7 @@
+.git/
+.venv*/
+slides/*.pptx
+verify/bin/
+*.tar
+.pytest_cache/
+__pycache__/

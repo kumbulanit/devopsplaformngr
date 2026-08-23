@@ -1,20 +1,17 @@
 # Lab Solutions & Instructor Notes
 
-This folder contains solution pointers and expected results for each lab. The starter files in `labs/` are already close to a working state; these notes explain the intended final state and common correct answers.
+Solution pointers and expected results for each lab. The starter files in
+`labs/` are working; these notes give intended final states and answers.
 
 ## Lab 00 — Environment Setup
 
-Expected versions at time of writing:
-
-- Docker 24.x+
-- kind 0.22+
-- kubectl 1.28+
-- Terraform 1.6+
-- Python 3.10+
-
-If a participant cannot install Terraform locally, they can still read the plan output and inspect the state file in Lab 05.
+`lab-setup/check-environment.sh` must end with
+`RESULT: all required checks passed`. Everything else in the course assumes
+this. `pytest` in `labs/app` reports **5 passed**.
 
 ## Lab 01 — Git Collaboration
+
+All work happens in `/tmp/lab01/app` — never in the course repo itself.
 
 Final `main.py` changes:
 
@@ -24,16 +21,9 @@ class HealthResponse(BaseModel):
     env: str
     build_id: str
     service_name: str
-
-
-def health():
-    return HealthResponse(
-        status="ok",
-        env=APP_ENV,
-        build_id=BUILD_ID,
-        service_name="order-service",
-    )
 ```
+
+and in `health()` add `service_name="order-service",`.
 
 New test in `test_app.py`:
 
@@ -45,65 +35,86 @@ def test_health_service_name():
 
 ## Lab 02 — Docker Basics
 
-Image `order-service:lab02` exists and a container responds to `http://localhost:8080/health`. Container user is `appuser`.
+`curl localhost:8080/health` → `env: "production"`, `build_id: "lab02"`.
+`whoami` in the container → `appuser`. Teaching point: env/build_id changed
+from Lab 00 because they are baked into the image.
 
 ## Lab 03 — Docker Compose
 
-Both services healthy. POST to `http://localhost:8080/orders` returns an order with a `payment` object.
+POST `/orders` → payment `"status": "approved"` (payment service now
+reachable). Payment service is intentionally NOT published to the host;
+Part C proves this with a failing host curl + a succeeding in-network call.
+Part D scaling shows per-replica in-memory state → statelessness argument.
 
 ## Lab 04 — CI/CD
 
-The workflow in `.github/workflows/ci.yml` should have `test`, `build` and `security-scan` jobs. On GitHub, a PR triggers the workflow. With `act`, `act -j test` should pass.
+The key answer: the first Trivy step (**report**, exit-code 0) can never
+fail the build — it is visibility only. The second (**gate**, exit-code 1,
+`ignore-unfixed`) fails on *actionable* CRITICALs. Also point out
+`permissions: contents: read` and the pinned action version (`@0.28.0`, not
+`@master`).
 
 ## Lab 05 — IaC
 
-`terraform plan` shows three resources. After apply:
-
-```bash
-curl http://localhost:8090/health
-# {"status":"ok","env":"dev","build_id":"terraform-dev"}
-```
-
-`terraform destroy` removes all `tf-*` containers.
+`terraform plan` shows **3 to add**. After apply:
+`curl localhost:8090/health` → `env: "dev"`, `build_id: "terraform-dev"`,
+and POST `/orders` → payment `approved` (Terraform wired the network).
+`.terraform.lock.hcl` is committed; state files are not — ask why.
+Part F experiment: `docker rm -f tf-dev-order-service && terraform plan`
+shows **1 to add** — Terraform detects drift from state.
+Ansible bonus: second run of the playbook reports `changed=0` (idempotence).
 
 ## Lab 06 — Kubernetes
 
-Running pods:
-
-```text
-NAME                             READY   STATUS
-order-service-...                1/1     Running
-payment-service-...              1/1     Running
-```
-
-Port-forward returns `env: kubernetes`. Scaling works; rolling update changes `build_id`.
+- Part C: `curl localhost:30080/health` → `env: "kubernetes"` (ConfigMap),
+  `build_id: "lab02"` (baked into image — nothing overrides it).
+- Part E: after `kubectl set image ... order-service:lab06`,
+  `build_id` becomes `"lab06"`. Rollback restores `"lab02"`.
+- If localhost:30080 fails, the cluster was created without
+  `kind-config.yaml` (no NodePort mapping) — recreate.
 
 ## Lab 07 — DevSecOps
 
-Trivy image scan runs. Trivy config scan runs on Terraform and Kubernetes. Conftest may report a missing `course` label unless the manifests are rendered with Kustomize labels.
+- Raw manifests **fail** the label policy; `kubectl kustomize | conftest`
+  **passes** — labels are added at render time. That contrast is the lesson.
+- `:latest` sed-experiment fails `no_latest_tag.rego`.
+- Rego must be v1 syntax (`import rego.v1`, `deny contains msg if`); the old
+  `deny[msg]` form is a parse error on current OPA/Conftest.
 
 ## Lab 08 — Observability
 
-Prometheus targets page shows both services up. Grafana renders request rate and p95 duration panels after the load test.
+- All three Prometheus targets UP; panels show data after the traffic loop.
+- Game day (Part G): stop or pause `payment-service-obs` yourself. Detection
+  signal: order payment status flips to `unavailable`; payment target goes
+  DOWN in Prometheus. Require the 5-line blameless postmortem.
+- SLO discussion: `/health` excluded from the SLI (health-check traffic
+  inflates availability); burn-rate alerts replace naive thresholds.
 
 ## Lab 09 — Capstone
 
-`./run-capstone.sh` completes and smoke-tests the deployment. `PLATFORM-HANDOVER.md` is created with the five required sections.
+`./run-capstone.sh` ends with health JSON showing `build_id: "capstone"`
+from `http://localhost:30080` and an order with payment `approved`.
+`kubectl get deploy order-service -o jsonpath='{.metadata.labels}'` shows
+base labels (course/environment=lab06 overridden to capstone) plus
+`platform: course-golden-path` — evidence of base + overlay composition.
+`PLATFORM-HANDOVER.md` has the five sections.
 
 ## Quick Commands for Live Demo
 
 ```bash
-# Docker
-docker compose -f labs/app/docker-compose.yml up -d --build
+# Compose
+cd labs/app && docker compose up -d --build
 
 # Terraform
-cd labs/lab05-iac-terraform && terraform apply -auto-approve
+cd labs/lab05-iac-terraform && cp terraform.tfvars.example terraform.tfvars \
+  && terraform init && terraform apply -auto-approve
 
 # Kubernetes
+kind create cluster --name devops-course --config labs/lab06-kubernetes-kind/kind-config.yaml
 cd labs/lab06-kubernetes-kind && kubectl apply -k .
 
 # Observability
-cd labs/lab08-observability && docker compose -f docker-compose.observability.yml up -d
+cd labs/lab08-observability && docker compose -f docker-compose.observability.yml up -d --build
 
 # Capstone
 cd labs/lab09-capstone && ./run-capstone.sh

@@ -1,148 +1,157 @@
-# Lab 07 — DevSecOps Scanning & Policy as Code
+# Lab 07 — DevSecOps: Scanning & Policy as Code
 
-**Duration:** 75 minutes  
-**Prerequisites:** Labs 00–06; Docker running.
+**Duration:** 60 minutes
+**Prerequisites:** Labs 00–06. Trivy and Conftest are already installed by
+`lab-setup/install-ubuntu24.sh` (verify: `trivy --version`, `conftest --version`).
 
 ## Objectives
 
-- Scan a container image for known vulnerabilities.
-- Scan source code and Kubernetes manifests for misconfigurations.
-- Write a simple policy-as-code check.
+- Scan a container image for known vulnerabilities and learn to triage.
+- Scan Terraform and Kubernetes files for misconfigurations.
+- Enforce rules with policy as code (OPA/Conftest) — and see policy catch drift.
 
-## Part A — Install Trivy
+## Part A — Image Vulnerability Scan
 
-```bash
-# macOS
-brew install aquasecurity/trivy/trivy
-
-# Windows
-winget install Aquasecurity.Trivy
-
-# Linux
-curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-```
-
-Verify:
-
-```bash
-trivy version
-```
-
-## Part B — Image Vulnerability Scan
-
-Scan the order service image built in Lab 02:
+Scan the order-service image from Lab 02:
 
 ```bash
 trivy image --severity HIGH,CRITICAL order-service:lab02
 ```
 
-Trivy compares layers against vulnerability databases. Expect some findings in the base image; the goal is to be aware of them and decide whether to accept, patch or replace the base image.
+Trivy compares each image layer against CVE databases. Expect findings in
+the base image. **Triage, don't panic** — for each finding ask:
 
-## Part C — Repository Secret Scan
-
-Trivy can also scan for leaked secrets:
+1. Is it *fixable* (a patched version exists)? → update the base image.
+2. Is it reachable in our usage? → assess, maybe accept with an expiry date.
+3. Neither? → `--ignore-unfixed` filters CVEs that have no fix yet:
 
 ```bash
+trivy image --severity CRITICAL --ignore-unfixed order-service:lab02
+```
+
+That second command is the **gate condition** used in the Lab 04 pipeline —
+a build should fail only on findings you can actually action.
+
+## Part B — Repository Secret Scan
+
+```bash
+cd ~/devopsplatformengr
 trivy fs --scanners secret .
 ```
 
-Run this from the repository root. If no secrets are present, Trivy will report a clean scan.
+Expected: clean. Now prove it works — plant a fake secret and re-scan:
 
-## Part D — Infrastructure Misconfiguration Scan
+```bash
+echo 'aws_secret_access_key = "AKIAIOSFODNN7EXAMPLE1234"' > /tmp/leak-test/config.txt 2>/dev/null || \
+  { mkdir -p /tmp/leak-test && echo 'aws_secret_access_key = "AKIAIOSFODNN7EXAMPLE1234"' > /tmp/leak-test/config.txt; }
+trivy fs --scanners secret /tmp/leak-test
+rm -rf /tmp/leak-test
+```
 
-Scan the Terraform and Kubernetes files:
+## Part C — Infrastructure Misconfiguration Scan
 
 ```bash
 trivy config labs/lab05-iac-terraform
 trivy config labs/lab06-kubernetes-kind
 ```
 
-Look for issues such as:
+Read the Kubernetes findings against the actual YAML. The manifests already
+set a `securityContext` (non-root, dropped capabilities, read-only root
+filesystem) and resource limits — many checks pass because Lab 06 was built
+that way. For anything still flagged, decide: fix, or document why not.
 
-- Containers running as root.
-- Missing resource limits.
-- Exposed secrets in manifests.
+## Part D — Policy as Code with OPA / Conftest
 
-Compare the findings to the files. Notice that the Dockerfiles already create a non-root user and the Kubernetes manifests set resource requests/limits.
-
-## Part E — Policy as Code with OPA / Conftest
-
-Install `conftest`:
+Policies live in `policy/`. Read the first one:
 
 ```bash
-brew install conftest   # macOS
-# or download from https://github.com/open-policy-agent/conftest/releases
+cat labs/lab07-devsecops/policy/labels.rego
 ```
 
-Create a policy that requires every Kubernetes Deployment to have a `course` label:
-
-```bash
-mkdir -p labs/lab07-devsecops/policy
-cat > labs/lab07-devsecops/policy/labels.rego <<'EOF'
+```rego
 package main
 
-deny[msg] {
-  input.kind == "Deployment"
-  not input.metadata.labels.course
-  msg := "Deployment must have a 'course' label"
+import rego.v1
+
+deny contains msg if {
+	input.kind == "Deployment"
+	not input.metadata.labels.course
+	msg := sprintf("Deployment %q must have a 'course' label", [input.metadata.name])
 }
-EOF
 ```
 
-Run the policy against the Kubernetes manifests:
+(That is modern Rego — OPA 1.0+ requires `import rego.v1` and the
+`deny contains msg if` form; the older `deny[msg]` syntax no longer parses.)
+
+**1. Test the raw manifests:**
 
 ```bash
-conftest test labs/lab06-kubernetes-kind/*.yaml --policy labs/lab07-devsecops/policy
+conftest test labs/lab06-kubernetes-kind/deployment-*.yaml \
+  --policy labs/lab07-devsecops/policy
+# Expected: FAILURES — the raw files have no 'course' label
 ```
 
-Because the manifests include a `course` label in `kustomization.yaml` but the raw files do not, you may see a denial. That is expected: it demonstrates why centralised labels matter and how policy catches drift.
-
-## Part F — Add a Security Gate to CI
-
-Open `.github/workflows/ci.yml` from Lab 04 and ensure the `security-scan` job exists. If it does not, copy the snippet from that lab.
-
-Commit the policy file:
+**2. Test what actually gets applied** — Kustomize adds the labels at render
+time:
 
 ```bash
-git add labs/lab07-devsecops/policy
-git commit -m "Add Kubernetes label policy"
+kubectl kustomize labs/lab06-kubernetes-kind | \
+  conftest test - --policy labs/lab07-devsecops/policy
+# Expected: PASS
 ```
+
+This gap between raw files and rendered output is exactly why policies must
+run against **what ships**, not what sits in the editor — and how policy
+catches drift when someone bypasses the kustomization.
+
+## Part E — Write Your Own Policy
+
+`policy/no_latest_tag.rego` forbids `:latest` (and untagged) images. Verify
+it against the manifests, then break it on purpose:
+
+```bash
+kubectl kustomize labs/lab06-kubernetes-kind | \
+  conftest test - --policy labs/lab07-devsecops/policy
+
+sed 's/order-service:lab02/order-service:latest/' \
+  labs/lab06-kubernetes-kind/deployment-order.yaml | \
+  conftest test - --policy labs/lab07-devsecops/policy
+# Expected: failure from no_latest_tag.rego
+```
+
+## Part F — Where This Lives in CI
+
+Open `labs/lab04-cicd-github-actions/.github/workflows/ci.yml` and find the
+two Trivy steps: the **report** (exit-code 0, never blocks) and the **gate**
+(exit-code 1 on fixable CRITICALs). A `conftest test` step against the
+rendered manifests would slot in the same way. Discussion: which policies
+belong in a *blocking* gate on day one, and which start as report-only?
 
 ## Expected Output
 
-- Trivy image scan lists vulnerabilities by severity.
-- Trivy secret scan runs without finding hard-coded credentials.
-- Trivy config scan reports misconfigurations or returns a clean scan.
-- Conftest either passes or reports a policy violation.
+- Image scan lists vulnerabilities by severity; you can explain the triage.
+- Secret scan is clean on the repo, and catches the planted secret.
+- Conftest fails raw manifests, passes rendered ones, and rejects `:latest`.
 
 ## Verification Checklist
 
-- [ ] Trivy is installed and runs.
-- [ ] Image scan completes.
-- [ ] Secret scan completes.
-- [ ] Config scan completes on Terraform and Kubernetes files.
-- [ ] Conftest evaluates the label policy.
-- [ ] Policy files are committed.
+- [ ] `trivy image` completes and you triaged one finding aloud.
+- [ ] Planted secret detected, then cleaned up.
+- [ ] `trivy config` findings reviewed against the real YAML.
+- [ ] Conftest raw-vs-rendered difference demonstrated.
+- [ ] `no_latest_tag.rego` rejects a `:latest` image.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| Trivy DB download is slow | Use `--skip-db-update` after the first run or set `TRIVY_DB_REPOSITORY`. |
-| `conftest` not found | Install from GitHub releases or use the Docker image: `openpolicyagent/conftest`. |
-| Policy never triggers | Verify the `input.kind` value and that the file is valid YAML. |
+| Trivy DB download slow | The installer pre-downloaded it; otherwise `--skip-db-update` after first run. |
+| `conftest: command not found` | Re-run `lab-setup/install-ubuntu24.sh` (installs a pinned release). |
+| Policy never triggers | Check `input.kind` capitalisation and that the YAML parses (`kubectl kustomize`). |
+| `rego_parse_error` | You are using pre-1.0 syntax — see the `import rego.v1` note above. |
 
 ## Stretch Goal
 
-Write a second policy that forbids container images with tag `latest`:
-
-```rego
-deny[msg] {
-  input.kind == "Deployment"
-  container := input.spec.template.spec.containers[_]
-  endswith(container.image, ":latest")
-  msg := sprintf("Container %s must not use latest tag", [container.name])
-}
-```
-
-Test it against a manifest that uses `:latest`.
+Write a third policy requiring every container to set
+`resources.limits.memory`, and prove it fails when you delete the limits
+from a copy of `deployment-order.yaml`.

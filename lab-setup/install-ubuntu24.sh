@@ -112,7 +112,7 @@ log "Installing base packages"
 run_cmd env DEBIAN_FRONTEND=noninteractive apt-get update
 run_cmd env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   ca-certificates curl gnupg lsb-release git software-properties-common \
-  python3 python3-pip python3-venv
+  python3 python3-pip python3-venv tmux jq unzip apt-transport-https
 
 log "Installing Docker Engine and Compose plugin"
 if [[ ! -f /etc/apt/sources.list.d/docker.list ]]; then
@@ -150,7 +150,8 @@ fi
 log "Installing kubectl"
 KUBECTL_BIN="/usr/local/bin/kubectl"
 if [[ ! -x "${KUBECTL_BIN}" ]]; then
-  K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+  # Pinned for course reproducibility; bump deliberately each quarter.
+  K8S_VERSION="v1.30.3"
   run_cmd curl -Lo /tmp/kubectl "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/${ARCH}/kubectl"
   run_cmd install -m 0755 /tmp/kubectl "${KUBECTL_BIN}"
   run_cmd rm -f /tmp/kubectl
@@ -164,11 +165,35 @@ fi
 run_cmd env DEBIAN_FRONTEND=noninteractive apt-get update
 run_cmd env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends terraform
 
+log "Installing Trivy (vulnerability & misconfiguration scanner, Lab 07)"
+if ! command -v trivy >/dev/null 2>&1; then
+  run_cmd sh -c 'curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor -o /usr/share/keyrings/trivy.gpg'
+  run_cmd sh -c "printf 'deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb %s main\n' \"$(lsb_release -cs 2>/dev/null || echo \"${OS_CODENAME}\")\" > /etc/apt/sources.list.d/trivy.list"
+  run_cmd env DEBIAN_FRONTEND=noninteractive apt-get update
+  run_cmd env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends trivy
+fi
+# Pre-download the vulnerability DB so Lab 07 does not wait on classroom Wi-Fi.
+if command -v trivy >/dev/null 2>&1; then
+  run_cmd_local trivy image --download-db-only || log "Trivy DB pre-download failed; Lab 07 will download on first scan"
+fi
+
+log "Installing Conftest (policy-as-code, Lab 07)"
+CONFTEST_VERSION="0.56.0"
+# Conftest release names use x86_64 / arm64
+CONFTEST_ARCH=$(uname -m); [[ "${CONFTEST_ARCH}" == "aarch64" ]] && CONFTEST_ARCH="arm64"
+if ! command -v conftest >/dev/null 2>&1; then
+  run_cmd_local curl -fsSL -o /tmp/conftest.tar.gz \
+    "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_${CONFTEST_ARCH}.tar.gz"
+  run_cmd_local tar -xzf /tmp/conftest.tar.gz -C /tmp conftest
+  run_cmd install -m 0755 /tmp/conftest /usr/local/bin/conftest
+  run_cmd_local rm -f /tmp/conftest /tmp/conftest.tar.gz
+fi
+
 log "Creating Python virtual environment for the sample app"
 if [[ -d "${REPO_ROOT}/labs/app" ]]; then
   run_cmd_local python3 -m venv "${REPO_ROOT}/labs/app/.venv"
   run_cmd_local "${REPO_ROOT}/labs/app/.venv/bin/pip" install --upgrade pip
-  run_cmd_local "${REPO_ROOT}/labs/app/.venv/bin/pip" install -r "${REPO_ROOT}/labs/app/requirements.txt" pytest python-pptx matplotlib
+  run_cmd_local "${REPO_ROOT}/labs/app/.venv/bin/pip" install -r "${REPO_ROOT}/labs/app/requirements.txt"
 fi
 
 echo
@@ -180,4 +205,9 @@ log "  docker compose version"
 log "  kind version"
 log "  kubectl version --client"
 log "  terraform -version"
+log "  trivy --version"
+log "  conftest --version"
 log "  ${REPO_ROOT}/labs/app/.venv/bin/python --version"
+log ""
+log "Now run the preflight check:"
+log "  ${REPO_ROOT}/lab-setup/check-environment.sh"

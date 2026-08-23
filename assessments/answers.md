@@ -1,45 +1,60 @@
 # Quiz Answers
 
-## Day 1 Answers
+## Day 1
 
-1. **CALMS** stands for Culture, Automation, Lean, Measurement, Sharing. It is a model that reminds organisations that DevOps is a balanced transformation, not just automation.
+### Section A
+A1 **b** (Measurement) · A2 **b** · A3 **c** · A4 **c** · A5 **b**
 
-2. Platform engineering provides self-service tooling, templates and guard rails so developers do not have to learn low-level infrastructure details.
+### Section B
 
-3. Any three of: source control, CI/CD, IaC, containers, observability, secrets management, collaboration/communication.
+**B1.** Platform engineering provides self-service tooling, templates and
+guardrails so developers do not have to learn low-level infrastructure
+details (accept: golden paths, paved roads, abstraction of infra).
 
-4. **Declarative** IaC describes the desired end state and lets the tool converge reality to it. **Imperative** IaC lists exact commands to execute in sequence.
+**B2.** The state file maps Terraform resources to real-world IDs so plans
+show accurate diffs. In the lab, deleting `tf-dev-order-service` manually
+made the next `terraform plan` show **1 to add** — Terraform detected the
+drift between state and reality.
 
-5. The state file maps Terraform resources to real-world IDs and tracks dependencies so Terraform can plan accurate diffs and avoid duplication.
+**B3.** Any two: isolated feature work, code review before merge, easier
+rollback, main stays stable/deployable, CI runs before merge.
 
-6. **Continuous Integration** merges code frequently and validates it with automated tests. **Continuous Delivery** keeps code in a deployable state and can deploy to production on demand (human decision); continuous deployment does so automatically.
+**B4.** A postmortem focused on system and process improvements rather than
+individual blame; it matters because it encourages honest reporting and
+learning, which prevents repeat incidents.
 
-7. Benefits include isolated feature work, code review, easier rollbacks, and safer collaboration on a shared main branch.
+**B5.** Terraform **provisions** infrastructure (creates/destroys resources:
+networks, containers, cloud instances); Ansible **configures** existing
+machines (packages, files, services). Accept "provisioning vs configuration
+management".
 
-8. A blameless postmortem focuses on system and process improvements after an incident, not on blaming individuals. It encourages learning and honest reporting.
+## Day 2
 
-9. Finding vulnerabilities earlier is faster and cheaper to fix. It also prevents insecure artefacts from ever reaching production.
+### Section A
+A1 **b** · A2 **b** · A3 **b** · A4 **b** · A5 **b**
 
-10. Platform adoption rate, time-to-first-service, developer-experience score, deployment frequency, or reduction in toil/support tickets.
+### Section B
 
-## Day 2 Answers
+**B1.** Benefit: independent deployment/scaling, team autonomy, fault
+isolation. Cost: distributed-system complexity (network failures, service
+discovery, observability overhead, eventual consistency).
 
-1. A **microservice** is a small, independently deployable service focused on a bounded context. Benefit: team autonomy and independent scaling. Cost: distributed-system complexity.
+**B2.** Integrating security checks as early as possible in the lifecycle.
+Examples from the labs: Trivy scan in the CI pipeline (Lab 04), the fixable-
+CRITICAL gate, secret scanning the repo, Conftest policy on manifests before
+deploy, non-root containers / securityContext caught by `trivy config`.
 
-2. API server, etcd, scheduler, controller manager.
+**B3.** Accept any real observed signal: order responses flipped payment
+status to `unavailable`; the payment-service target went DOWN on the
+Prometheus targets page; error/timeout patterns in the payment logs; a rate
+change in the metrics. Key point: detection came from telemetry, not from
+being told.
 
-3. A Kubernetes Service provides stable networking and load balancing to a set of Pods matching a label selector.
+**B4.** The allowable amount of unreliability within the SLO window (1% for
+a 99% SLO). When exhausted, risky feature releases pause and the team
+prioritises reliability work until the budget recovers.
 
-4. **Shifting security left** means integrating security checks and practices as early as possible in the software lifecycle, starting at design and coding.
-
-5. Examples: Open Policy Agent / Conftest, Terraform Sentinel, Checkov, Falco, `trivy config`, policy-as-code in CI/CD.
-
-6. Metrics, logs, traces.
-
-7. An **SLO** (Service Level Objective) defines the target reliability for a service. The **error budget** is the allowable unreliability over a window; exhausting it signals a pause on risky changes.
-
-8. Detect → Triage → Mitigate → Resolve → Postmortem → Remediate.
-
-9. Treating the platform as a product ensures it has users, a backlog, good documentation, UX, metrics and funding — which drives adoption and value.
-
-10. The **golden path** provided a standard, supported workflow (CI/CD, IaC, Kubernetes manifests) so the stream-aligned team could deploy quickly and safely without reinventing the toolchain.
+**B5.** Any two: how to write a CI/CD pipeline, how to configure
+Trivy/security gates, Kubernetes manifest details (probes, securityContext,
+labels), Terraform module internals, how images get into the cluster, how
+monitoring gets wired up.

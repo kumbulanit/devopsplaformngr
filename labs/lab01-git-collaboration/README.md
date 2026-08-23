@@ -1,6 +1,6 @@
 # Lab 01 — Culture and Collaboration with Git
 
-**Duration:** 60 minutes  
+**Duration:** 45 minutes
 **Prerequisites:** Lab 00 completed; basic Git familiarity.
 
 ## Objectives
@@ -11,17 +11,35 @@
 
 ## Scenario
 
-You are part of a stream-aligned team that owns the order service. A new requirement arrives: the health endpoint must also return the service name. You will implement it using a branch, open a pull request, review a teammate's PR, and run a retrospective.
+You are part of a stream-aligned team that owns the order service. A new
+requirement arrives: the health endpoint must also return the service name.
+You will implement it on a branch, simulate a pull-request review, and run a
+retrospective.
 
-## Setup
+## Setup — Work in a Copy
+
+We practise on a **copy** of the app in `/tmp`, so the course repository
+itself is never touched (never run `git init` or `rm -rf .git` inside a
+repository you care about):
 
 ```bash
-cd labs/app
-# Initialise a fresh local repository for the exercise
-rm -rf .git
-git init
+mkdir -p /tmp/lab01 && cp -r labs/app /tmp/lab01/app
+cd /tmp/lab01/app
+rm -rf .venv .pytest_cache __pycache__
+git init -b main
 git add .
 git commit -m "Initial order and payment services"
+```
+
+> `git init -b main` names the default branch `main` explicitly, so the lab
+> works identically on every machine regardless of Git configuration.
+
+The tests still run from the course venv:
+
+```bash
+source ~/devopsplatformengr/labs/app/.venv/bin/activate
+pytest
+# Expected: 5 passed
 ```
 
 ## Part A — Feature Branch Workflow
@@ -32,16 +50,16 @@ git commit -m "Initial order and payment services"
 git checkout -b feature/health-service-name
 ```
 
-2. Edit `main.py`. In the `HealthResponse` model, add `service_name: str`. In the `health()` function, return `"order-service"` as the service name.
+2. Edit `main.py`: in the `HealthResponse` model add `service_name: str`,
+   and in the `health()` function return `service_name="order-service"`.
 
 3. Run the tests to make sure nothing broke:
 
 ```bash
-source .venv/bin/activate
 pytest
 ```
 
-4. Commit the change with a clear message:
+4. Commit with a clear message:
 
 ```bash
 git add main.py
@@ -50,25 +68,24 @@ git commit -m "feat: add service_name to health endpoint"
 
 ## Part B — Pull Request Simulation
 
-Because this is a local-only exercise, we will simulate a PR review with a second clone.
+Because this is a local-only exercise, we simulate the PR review with a bare
+"remote" and a reviewer clone.
 
 1. Create a bare remote and push your branch:
 
 ```bash
-cd /tmp
-git clone --bare /path/to/labs/app review-repo.git
-cd /path/to/labs/app
-git remote add local /tmp/review-repo.git
+git clone --bare /tmp/lab01/app /tmp/lab01/review-repo.git
+cd /tmp/lab01/app
+git remote add local /tmp/lab01/review-repo.git
 git push local feature/health-service-name
 ```
 
-2. Clone a 'reviewer' copy:
+2. Clone a reviewer copy:
 
 ```bash
-cd /tmp
+cd /tmp/lab01
 git clone review-repo.git reviewer-copy
 cd reviewer-copy
-git fetch --all
 git checkout feature/health-service-name
 ```
 
@@ -88,11 +105,14 @@ git diff main..feature/health-service-name
 - 💡 Consider adding a test for the new field.
 ```
 
-5. Address the review suggestion: add a test in `test_app.py` that asserts `service_name` equals `"order-service"`. Commit and push.
+5. Back in `/tmp/lab01/app`, address the suggestion: add a test in
+   `test_app.py` asserting `service_name == "order-service"`. Commit and
+   push again.
 
 6. Merge the branch:
 
 ```bash
+cd /tmp/lab01/app
 git checkout main
 git merge --no-ff feature/health-service-name -m "Merge feature/health-service-name"
 git push local main
@@ -100,7 +120,8 @@ git push local main
 
 ## Part C — Blameless Retrospective
 
-In your group (or individually), spend 10 minutes answering these questions and record them in `RETRO.md`.
+In your group (or individually), spend 10 minutes on these questions and
+record the answers in `RETRO.md`:
 
 ```markdown
 # Blameless Retro — Lab 01
@@ -135,21 +156,29 @@ pytest
 
 | Symptom | Fix |
 |---------|-----|
-| Merge conflict | Open the file, resolve markers, then `git add` and `git commit`. |
-| `pytest` not found | Activate the virtual environment from Lab 00. |
-| Reviewer clone cannot push | Ensure you pushed the branch to the bare repo first. |
+| Merge conflict | Open the file, resolve the markers, then `git add` and `git commit`. |
+| `pytest` not found | Activate the venv: `source ~/devopsplatformengr/labs/app/.venv/bin/activate`. |
+| Reviewer clone cannot see the branch | Push the branch to the bare repo first (Part B step 1). |
+| `main` vs `master` mismatch | Re-run setup with `git init -b main`. |
 
 ## Stretch Goal
 
-Configure a Git hook that prevents commits with `TODO` or `FIXME` unless a ticket ID is present:
+Configure a Git hook that rejects commit messages containing `TODO` or
+`FIXME` without a ticket ID:
 
 ```bash
 cat > .git/hooks/commit-msg <<'EOF'
 #!/bin/bash
-if grep -E 'TODO|FIXME' "$1" && ! grep -E '#[0-9]+' "$1"; then
-  echo "Commit message with TODO/FIXME must include a ticket ID"
+if grep -qE 'TODO|FIXME' "$1" && ! grep -qE '#[0-9]+' "$1"; then
+  echo "Commit message with TODO/FIXME must include a ticket ID (e.g. #123)"
   exit 1
 fi
 EOF
 chmod +x .git/hooks/commit-msg
+```
+
+## Clean Up
+
+```bash
+rm -rf /tmp/lab01
 ```
