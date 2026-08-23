@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+*.tfplan
+.terraform.lock.hcl
+
+# Kubernetes / Docker
+*.tar
+*.log
+
+# macOS
+.DS_Store
+
+# Verification tooling binaries (downloaded on demand by verify/prepare-binaries.sh)
+verify/bin/

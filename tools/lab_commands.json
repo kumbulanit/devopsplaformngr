@@ -1,0 +1,857 @@
+{
+  "lab00-environment-setup": {
+    "title": "Lab 00 \u2014 Environment Setup",
+    "commands": [
+      {
+        "command": "brew install git docker --cask docker",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "brew install docker-compose kind kubectl terraform python",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo apt-get update",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo apt-get install -y git curl ca-certificates gnupg lsb-release",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo apt-get install -y docker.io docker-compose-v2",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo systemctl enable --now docker",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo usermod -aG docker \"$USER\"",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "ARCH=$(dpkg --print-architecture)",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl -Lo ./kind \"https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-${ARCH}\"",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl -LO \"https://dl.k8s/release/$(curl -L -s https://dl.k8s/release/stable.txt)/bin/linux/${ARCH}/kubectl\"",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "rm kubectl",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/hashicorp.list",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "sudo apt-get update && sudo apt-get install -y terraform",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "git --version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker --version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker run --rm hello-world",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker compose version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "kind version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl version --client",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "terraform -version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "python3 --version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "python3 -m pip --version",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "python3 -m venv .venv",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "source .venv/bin/activate        # Windows: .venv\\Scripts\\activate",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "pip install -r requirements.txt",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "uvicorn main:app --reload --port 8000",
+        "directory": "labs/app",
+        "classification": "background"
+      },
+      {
+        "command": "curl http://localhost:8000/health",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "curl -X POST http://localhost:8000/orders \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"item\":\"coffee\",\"quantity\":2,\"price\":3.5}'",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kind create cluster --name devops-course",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl get nodes",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kind delete cluster --name devops-course",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "brew install act        # macOS",
+        "directory": "labs/app",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "choco install act-cli   # Windows",
+        "directory": "labs/app",
+        "classification": "skip-os-specific"
+      }
+    ]
+  },
+  "lab01-git-collaboration": {
+    "title": "Lab 01 \u2014 Culture and Collaboration with Git",
+    "commands": [
+      {
+        "command": "rm -rf .git",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git init",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git add .",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"Initial order and payment services\"",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git checkout -b feature/health-service-name",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "source .venv/bin/activate",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "pytest",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git add main.py",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"feat: add service_name to health endpoint\"",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git clone --bare /Users/kumbulani.tshuma/Documents/devops trainning/devopsplatformengr/labs/app review-repo.git",
+        "directory": "/tmp",
+        "classification": "run"
+      },
+      {
+        "command": "git remote add local /tmp/review-repo.git",
+        "directory": "/Users/kumbulani.tshuma/Documents/devops trainning/devopsplatformengr/labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git push local feature/health-service-name",
+        "directory": "/Users/kumbulani.tshuma/Documents/devops trainning/devopsplatformengr/labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "git clone review-repo.git reviewer-copy",
+        "directory": "/tmp",
+        "classification": "run"
+      },
+      {
+        "command": "git fetch --all",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "git checkout feature/health-service-name",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "git diff main..feature/health-service-name",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "git checkout main",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "git merge --no-ff feature/health-service-name -m \"Merge feature/health-service-name\"",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "git push local main",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "git log --oneline --graph --all",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "pytest",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "cat > .git/hooks/commit-msg <<'EOF'\nif grep -E 'TODO|FIXME' \"$1\" && ! grep -E '#[0-9]+' \"$1\"; then\n  echo \"Commit message with TODO/FIXME must include a ticket ID\"\n  exit 1\nfi\nEOF",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      },
+      {
+        "command": "chmod +x .git/hooks/commit-msg",
+        "directory": "reviewer-copy",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab02-docker-basics": {
+    "title": "Lab 02 \u2014 Docker Basics",
+    "commands": [
+      {
+        "command": "docker build -t order-service:lab02 --build-arg BUILD_ID=lab02 -f Dockerfile .",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker images order-service",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker run -d --name order-lab02 -p 8080:8000 order-service:lab02",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl http://localhost:8080/health",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker ps",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker logs order-lab02",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker exec -it order-lab02 /bin/sh",
+        "directory": ".",
+        "classification": "interactive-exec"
+      },
+      {
+        "command": "whoami",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "ls -la /app",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "exit",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker history order-service:lab02",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker stop order-lab02",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker rm order-lab02",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "brew install dive          # macOS",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "dive order-service:lab02",
+        "directory": ".",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab03-compose-microservices": {
+    "title": "Lab 03 \u2014 Docker Compose Microservices",
+    "commands": [
+      {
+        "command": "docker compose up -d --build",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker compose ps",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl -X POST http://localhost:8080/orders \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"item\":\"latte\",\"quantity\":1,\"price\":4.0}'",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl http://localhost:8080/orders",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker network ls",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker network inspect app_app-network  # name may vary; look for app-network",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker compose up -d --scale payment-service=2",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "BUILD_ID=compose-demo docker compose up -d --build",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl http://localhost:8080/health",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker compose down --volumes",
+        "directory": ".",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab04-cicd-github-actions": {
+    "title": "Lab 04 \u2014 CI/CD with GitHub Actions",
+    "commands": [
+      {
+        "command": "cp labs/lab04-cicd-github-actions/.github/workflows/ci.yml .github/workflows/ci.yml",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git add .github/workflows/ci.yml",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"Add CI workflow for order service\"",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git push origin main",
+        "directory": ".",
+        "classification": "skip-no-remote"
+      },
+      {
+        "command": "git checkout -b ci-demo",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "echo \"# CI demo branch\" >> labs/app/main.py",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git add labs/app/main.py",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"Demo change to trigger CI\"",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git push origin ci-demo",
+        "directory": ".",
+        "classification": "skip-no-remote"
+      },
+      {
+        "command": "brew install act",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "act -j test",
+        "directory": ".",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act -j build",
+        "directory": ".",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act -j security-scan",
+        "directory": ".",
+        "classification": "skip-tool-missing"
+      }
+    ]
+  },
+  "lab05-iac-terraform": {
+    "title": "Lab 05 \u2014 Infrastructure as Code with Terraform",
+    "commands": [
+      {
+        "command": "docker build -t order-service:lab02 --build-arg BUILD_ID=lab02 -f Dockerfile .",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "docker build -t payment-service:lab02 --build-arg BUILD_ID=lab02 -f Dockerfile.payment .",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "cp terraform.tfvars.example terraform.tfvars",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform init",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform plan -out=tfplan",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform apply tfplan",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform output order_service_url",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "curl $(terraform output -raw order_service_url)/health",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "curl -X POST $(terraform output -raw order_service_url)/orders \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"item\":\"cappuccino\",\"quantity\":1,\"price\":4.5}'",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform state list",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform state show docker_container.order_service",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform plan",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform apply",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "terraform destroy",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      },
+      {
+        "command": "docker ps -a --filter \"name=tf-\"",
+        "directory": "labs/lab05-iac-terraform",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab06-kubernetes-kind": {
+    "title": "Lab 06 \u2014 Kubernetes on kind",
+    "commands": [
+      {
+        "command": "kind create cluster --name devops-course",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl get nodes",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "kind load docker-image order-service:lab02 --name devops-course",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "kind load docker-image payment-service:lab02 --name devops-course",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl apply -k .",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl get pods --watch",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "skip-watch"
+      },
+      {
+        "command": "kubectl port-forward svc/order-service 8080:8000",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "background"
+      },
+      {
+        "command": "curl http://localhost:8080/health",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "run"
+      },
+      {
+        "command": "curl -X POST http://localhost:8080/orders \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"item\":\"espresso\",\"quantity\":2,\"price\":2.5}'",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl scale deployment order-service --replicas=3",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl get pods -l app=order-service",
+        "directory": "labs/lab06-kubernetes-kind",
+        "classification": "run"
+      },
+      {
+        "command": "docker build -t order-service:lab06 --build-arg BUILD_ID=lab06 -f Dockerfile .",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kind load docker-image order-service:lab06 --name devops-course",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl set image deployment/order-service order=order-service:lab06",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl rollout status deployment/order-service",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl port-forward svc/order-service 8080:8000",
+        "directory": "labs/app",
+        "classification": "background"
+      },
+      {
+        "command": "curl http://localhost:8080/health",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl rollout history deployment/order-service",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl rollout undo deployment/order-service",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl rollout status deployment/order-service",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kind delete cluster --name devops-course",
+        "directory": "labs/app",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml",
+        "directory": "labs/app",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab07-devsecops": {
+    "title": "Lab 07 \u2014 DevSecOps Scanning & Policy as Code",
+    "commands": [
+      {
+        "command": "brew install aquasecurity/trivy/trivy",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "winget install Aquasecurity.Trivy",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "trivy version",
+        "directory": ".",
+        "classification": "conditional-tool"
+      },
+      {
+        "command": "trivy image --severity HIGH,CRITICAL order-service:lab02",
+        "directory": ".",
+        "classification": "conditional-tool"
+      },
+      {
+        "command": "trivy fs --scanners secret .",
+        "directory": ".",
+        "classification": "conditional-tool"
+      },
+      {
+        "command": "trivy config labs/lab05-iac-terraform",
+        "directory": ".",
+        "classification": "conditional-tool"
+      },
+      {
+        "command": "trivy config labs/lab06-kubernetes-kind",
+        "directory": ".",
+        "classification": "conditional-tool"
+      },
+      {
+        "command": "brew install conftest   # macOS",
+        "directory": ".",
+        "classification": "skip-os-specific"
+      },
+      {
+        "command": "mkdir -p labs/lab07-devsecops/policy",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "cat > labs/lab07-devsecops/policy/labels.rego <<'EOF'\npackage main\ndeny[msg] {\n  input.kind == \"Deployment\"\n  not input.metadata.labels.course\n  msg := \"Deployment must have a 'course' label\"\n}\nEOF",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "conftest test labs/lab06-kubernetes-kind/*.yaml --policy labs/lab07-devsecops/policy",
+        "directory": ".",
+        "classification": "conditional-tool"
+      },
+      {
+        "command": "git add labs/lab07-devsecops/policy",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"Add Kubernetes label policy\"",
+        "directory": ".",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab08-observability": {
+    "title": "Lab 08 \u2014 Observability & Reliability",
+    "commands": [
+      {
+        "command": "docker compose -f docker-compose.observability.yml up -d --build",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker compose -f docker-compose.observability.yml ps",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl http://localhost:8080/metrics | grep order_requests_total",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "curl http://localhost:8001/metrics | grep payment_requests_total",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "for i in {1..30}; do",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "  curl -s -X POST http://localhost:8080/orders \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"item\":\"mocha\",\"quantity\":1,\"price\":5.0}' > /dev/null",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "done",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "docker compose -f docker-compose.observability.yml down --volumes",
+        "directory": ".",
+        "classification": "run"
+      }
+    ]
+  },
+  "lab09-capstone": {
+    "title": "Lab 09 \u2014 Capstone: End-to-End Golden Path",
+    "commands": [
+      {
+        "command": "chmod +x run-capstone.sh",
+        "directory": "labs/lab09-capstone",
+        "classification": "run"
+      },
+      {
+        "command": "./run-capstone.sh",
+        "directory": "labs/lab09-capstone",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl get all",
+        "directory": "labs/lab09-capstone",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl logs -l app=order-service --tail=20",
+        "directory": "labs/lab09-capstone",
+        "classification": "run"
+      },
+      {
+        "command": "kubectl logs -l app=payment-service --tail=20",
+        "directory": "labs/lab09-capstone",
+        "classification": "run"
+      }
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+name: Capstone — Build, Scan and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  ORDER_IMAGE: order-service
+  PAYMENT_IMAGE: payment-service
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r labs/app/requirements.txt
+          pip install pytest
+      - name: Run tests
+        working-directory: labs/app
+        run: pytest
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build images
+        working-directory: labs/app
+        run: |
+          docker build -t ${{ env.ORDER_IMAGE }}:${{ github.sha }} -f Dockerfile .
+          docker build -t ${{ env.PAYMENT_IMAGE }}:${{ github.sha }} -f Dockerfile.payment .
+      - name: Upload images as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: images
+          path: |
+            /tmp/order-image.tar
+            /tmp/payment-image.tar
+        # In a real pipeline you would push to a registry. Artifacts are used here for portability.
+
+  security:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build images for scan
+        working-directory: labs/app
+        run: |
+          docker build -t ${{ env.ORDER_IMAGE }}:${{ github.sha }} -f Dockerfile .
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ORDER_IMAGE }}:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 0
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, security]
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.30.0"
+      - name: Deploy to Kubernetes
+        run: |
+          echo "In a real environment this step applies manifests to the target cluster."
+          echo "For the capstone lab, run labs/lab09-capstone/run-capstone.sh locally."

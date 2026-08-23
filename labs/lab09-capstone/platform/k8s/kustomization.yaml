@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../lab06-kubernetes-kind/configmap.yaml
+  - ../../../lab06-kubernetes-kind/deployment-payment.yaml
+  - ../../../lab06-kubernetes-kind/deployment-order.yaml
+
+images:
+  - name: order-service
+    newTag: capstone
+  - name: payment-service
+    newTag: capstone
+
+commonLabels:
+  platform: course-golden-path
+  environment: capstone
