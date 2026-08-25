@@ -28,7 +28,9 @@
    person — labs hardcode localhost ports (8080, 8001, 8090–8092, 9090,
    3000, 30080) and a kind cluster name, so a shared machine collides.
 4. Day 1 needs outbound internet (image pulls, Terraform providers, GitHub).
-   Lab 04 additionally needs participant GitHub accounts **or** `act`.
+   Lab 04 runs entirely on the VM with `act` (installed by the setup script,
+   runner image pre-pulled). GitHub accounts are only needed for Lab 04
+   Part D, which is optional.
 
 ## Course Format (matches the sold outline)
 
@@ -74,6 +76,11 @@ also the participant reference after the course.
 4. **kind cluster created without `kind-config.yaml`** — localhost:30080
    dead; delete and recreate with the config.
 5. **Stale images in kind** — after rebuilds, `kind load docker-image` again.
+6. **A tool is missing on someone's VM** — just re-run
+   `./lab-setup/install-ubuntu24.sh`. It checks every component and installs
+   only what is absent (a re-run on a healthy VM downloads nothing), so it is
+   the fastest repair during a lab. It exits non-zero and lists anything it
+   still could not install.
 
 ## Pacing Tips
 

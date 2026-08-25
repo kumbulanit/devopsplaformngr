@@ -42,3 +42,6 @@ slides/build_slides.py
 slides/requirements-authoring.txt
 diagrams/build_diagrams.py
 lab-setup/create-labs.sh
+
+# Microsoft Office lock files (created while a deck is open)
+~$*

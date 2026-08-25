@@ -17,14 +17,21 @@ runs on this VM and every URL is `http://localhost:...` on it.
 Everything the course needs is installed by a single script. If your
 instructor pre-provisioned the VM this has already been run — skip to Part B.
 
+The script is **safe to run again at any time**: it checks each component and
+installs only what is missing, so a re-run on a healthy VM downloads nothing.
+If a tool goes missing later in the course, re-running it is the fix.
+
 ```bash
 cd ~/devopsplatformengr        # wherever you cloned the course repository
 ./lab-setup/install-ubuntu24.sh
 ```
 
 The script installs: Git, Docker Engine + Compose plugin, kind, kubectl,
-Terraform, Trivy, Conftest, tmux, jq, Python 3 with the sample-app virtual
-environment in `labs/app/.venv`.
+Terraform, Trivy, Conftest, `act` (runs GitHub Actions workflows locally in
+Lab 04), tmux, jq, Python 3 with the sample-app virtual environment in
+`labs/app/.venv`. It also pre-pulls the large images the labs need — the
+Trivy vulnerability database and the `act` runner image — so no lab waits on
+classroom Wi-Fi.
 
 > **Important:** the script adds you to the `docker` group. Group membership
 > only applies to **new** sessions — log out and back in, or run:
@@ -116,6 +123,7 @@ kind delete cluster --name devops-course
 - [ ] `pytest` reports 5 passed.
 - [ ] A kind cluster was created and deleted.
 - [ ] You can split, switch and detach tmux panes.
+- [ ] `act --version` works (Lab 04 runs pipelines locally with it).
 
 ## Troubleshooting
 
@@ -129,9 +137,17 @@ kind delete cluster --name devops-course
 
 ## Stretch Goal
 
-Install `act` to run GitHub Actions workflows locally in Lab 04:
+Confirm the Lab 04 toolchain is ready to run a pipeline on this VM — no
+GitHub account required:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
 act --version
+act -l -W labs/lab04-cicd-github-actions/.github/workflows/ci.yml
+```
+
+The second command lists the jobs `act` found in the Lab 04 workflow. If the
+runner image was pre-pulled during install, Lab 04 will start in seconds:
+
+```bash
+docker image ls catthehacker/ubuntu
 ```

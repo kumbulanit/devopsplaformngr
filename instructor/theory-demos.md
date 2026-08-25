@@ -76,6 +76,16 @@ Pairs answer: 1) Draw the job graph — what runs in parallel? 2) Which Trivy
 step can fail the build and why does it use `ignore-unfixed`? 3) What do
 `permissions: contents: read` and `@0.28.0` protect against?
 
+Then show, in one command, that this file is executable on the VM — no
+GitHub, no account:
+
+```bash
+act -l -W ~/devopsplatformengr/labs/lab04-cicd-github-actions/.github/workflows/ci.yml
+```
+
+That is Workshop 1's starting point: participants run the pipeline locally
+first, and only afterwards (optionally) push it to GitHub.
+
 ## Module 6 — What a container is, in 6 commands (10 min, instructor demo)
 
 ```bash
