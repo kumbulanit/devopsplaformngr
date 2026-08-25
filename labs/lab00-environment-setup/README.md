@@ -152,10 +152,43 @@ kind delete cluster --name devops-course
 | Symptom | Fix |
 |---------|-----|
 | `permission denied` on `docker ...` | You are not in the `docker` group yet: `newgrp docker`, or log out/in. |
-| `docker: Cannot connect to daemon` | `sudo systemctl start docker` |
+| `docker: Cannot connect to daemon` | The daemon is stopped: `sudo systemctl start docker` (see *Is Docker running?* below). |
 | `kind create cluster` hangs | Check VM resources: `free -h` (needs ~6 GB RAM) and `df -h /` (needs ~15 GB free). |
 | Port 8000 already in use | `sudo ss -ltnp 'sport = :8000'` to find the process, or use `--port 8080`. |
 | `pytest: command not found` | Activate the venv first: `source labs/app/.venv/bin/activate`. |
+
+## Is Docker Running?
+
+Almost every lab needs the Docker daemon, and it fails in two different ways
+that need two different fixes. Check in this order:
+
+```bash
+docker version        # shows Client AND Server — if Server is missing, the daemon is not reachable
+docker info           # one command that either works or tells you exactly why
+systemctl is-active docker    # running / inactive / failed
+```
+
+Then act on what you saw:
+
+```bash
+# daemon stopped -> start it, and make it start at boot
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo journalctl -u docker -n 30 --no-pager    # if it refuses to start
+
+# "permission denied" -> the daemon is fine, your session is not in the group
+newgrp docker            # this shell only
+# or log out and back in, after: sudo usermod -aG docker $USER
+```
+
+Prove it end to end:
+
+```bash
+docker run --rm hello-world
+```
+
+`./lab-setup/check-environment.sh` runs these checks for you and prints a
+**Docker daemon diagnosis** block naming the cause and the fix.
 
 ## Stretch Goal
 
