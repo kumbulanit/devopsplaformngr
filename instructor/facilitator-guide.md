@@ -76,6 +76,11 @@ also the participant reference after the course.
 4. **kind cluster created without `kind-config.yaml`** — localhost:30080
    dead; delete and recreate with the config.
 5. **Stale images in kind** — after rebuilds, `kind load docker-image` again.
+6. **A tool is missing on someone's VM** — just re-run
+   `./lab-setup/install-ubuntu24.sh`. It checks every component and installs
+   only what is absent (a re-run on a healthy VM downloads nothing), so it is
+   the fastest repair during a lab. It exits non-zero and lists anything it
+   still could not install.
 
 ## Pacing Tips
 

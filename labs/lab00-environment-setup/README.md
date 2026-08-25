@@ -17,6 +17,10 @@ runs on this VM and every URL is `http://localhost:...` on it.
 Everything the course needs is installed by a single script. If your
 instructor pre-provisioned the VM this has already been run — skip to Part B.
 
+The script is **safe to run again at any time**: it checks each component and
+installs only what is missing, so a re-run on a healthy VM downloads nothing.
+If a tool goes missing later in the course, re-running it is the fix.
+
 ```bash
 cd ~/devopsplatformengr        # wherever you cloned the course repository
 ./lab-setup/install-ubuntu24.sh
