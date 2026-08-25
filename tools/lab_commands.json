@@ -3,38 +3,58 @@
     "title": "Lab 00 \u2014 Environment Setup & Verification",
     "commands": [
       {
-        "command": "# wherever you cloned the course repository",
-        "directory": "~/devopsplatformengr",
+        "command": "find ~ -maxdepth 3 -name lab-setup -type d 2>/dev/null",
+        "directory": ".",
+        "classification": "run"
+      },
+      {
+        "command": "# <- the directory the find printed, minus /lab-setup",
+        "directory": "/home/student/devops-course",
+        "classification": "run"
+      },
+      {
+        "command": "echo \"export COURSE_HOME=$(pwd)\" >> ~/.bashrc",
+        "directory": "/home/student/devops-course",
+        "classification": "run"
+      },
+      {
+        "command": "export COURSE_HOME=$(pwd)",
+        "directory": "/home/student/devops-course",
+        "classification": "run"
+      },
+      {
+        "command": "echo \"$COURSE_HOME\"                     # sanity check: prints the repo path",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
         "command": "./lab-setup/install-ubuntu24.sh",
-        "directory": "~/devopsplatformengr",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
         "command": "> newgrp docker",
-        "directory": "~/devopsplatformengr",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
         "command": "> ",
-        "directory": "~/devopsplatformengr",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
         "command": "./lab-setup/install-ubuntu24.sh --dry-run",
-        "directory": "~/devopsplatformengr",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
         "command": "./lab-setup/check-environment.sh",
-        "directory": "~/devopsplatformengr",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
         "command": "tmux new -s lab",
-        "directory": "~/devopsplatformengr",
+        "directory": "/home/student/devops-course",
         "classification": "run"
       },
       {
@@ -83,14 +103,19 @@
         "classification": "run"
       },
       {
-        "command": "curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin",
-        "directory": "labs/app",
-        "classification": "run"
-      },
-      {
         "command": "act --version",
         "directory": "labs/app",
         "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act -l -W labs/lab04-cicd-github-actions/.github/workflows/ci.yml",
+        "directory": "labs/app",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "docker image ls catthehacker/ubuntu",
+        "directory": "labs/app",
+        "classification": "run"
       }
     ]
   },
@@ -123,7 +148,7 @@
         "classification": "run"
       },
       {
-        "command": "source ~/devopsplatformengr/labs/app/.venv/bin/activate",
+        "command": "source \"$COURSE_HOME\"/labs/app/.venv/bin/activate",
         "directory": "/tmp/lab01/app",
         "classification": "run"
       },
@@ -415,72 +440,112 @@
     ]
   },
   "lab04-cicd-github-actions": {
-    "title": "Lab 04 \u2014 CI/CD with GitHub Actions",
+    "title": "Lab 04 \u2014 CI/CD Pipelines (locally with act, then on GitHub)",
     "commands": [
       {
         "command": "mkdir -p .github/workflows",
-        "directory": ".",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
         "command": "cp labs/lab04-cicd-github-actions/.github/workflows/ci.yml .github/workflows/ci.yml",
-        "directory": ".",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
-        "command": "git add .github/workflows/ci.yml",
-        "directory": ".",
-        "classification": "run"
+        "command": "act --version",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
       },
       {
-        "command": "git commit -m \"Add CI workflow for order service\"",
-        "directory": ".",
-        "classification": "run"
-      },
-      {
-        "command": "git push origin main",
-        "directory": ".",
-        "classification": "skip-no-remote"
-      },
-      {
-        "command": "git checkout -b ci-demo",
-        "directory": ".",
-        "classification": "run"
-      },
-      {
-        "command": "echo \"# CI demo\" >> labs/app/main.py",
-        "directory": ".",
-        "classification": "run"
-      },
-      {
-        "command": "git add labs/app/main.py",
-        "directory": ".",
-        "classification": "run"
-      },
-      {
-        "command": "git commit -m \"Demo change to trigger CI\"",
-        "directory": ".",
-        "classification": "run"
-      },
-      {
-        "command": "git push origin ci-demo",
-        "directory": ".",
-        "classification": "skip-no-remote"
-      },
-      {
-        "command": "curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin",
-        "directory": ".",
-        "classification": "run"
+        "command": "act -l",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
       },
       {
         "command": "act -j test",
-        "directory": ".",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "skip-tool-missing"
       },
       {
         "command": "act -j build",
-        "directory": ".",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act -j security-scan",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act push",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act -j security-scan",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "act -j security-scan",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "git add .github/workflows/ci.yml",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"Add CI workflow for order service\"",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "git push origin main",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-no-remote"
+      },
+      {
+        "command": "git checkout -b ci-demo",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "echo \"# CI demo\" >> labs/app/main.py",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "git add labs/app/main.py",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "git commit -m \"Demo change to trigger CI\"",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "git push origin ci-demo",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-no-remote"
+      },
+      {
+        "command": "act -j test --secret MY_TOKEN=not-a-real-secret",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "skip-tool-missing"
+      },
+      {
+        "command": "rm -f \"$COURSE_HOME\"/.github/workflows/ci.yml",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
+      },
+      {
+        "command": "docker image ls | grep act",
+        "directory": "\"$COURSE_HOME\"",
+        "classification": "run"
       }
     ]
   },
@@ -699,57 +764,57 @@
       },
       {
         "command": "trivy fs --scanners secret .",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "conditional-tool"
       },
       {
         "command": "echo 'aws_secret_access_key = \"AKIAIOSFODNN7EXAMPLE1234\"' > /tmp/leak-test/config.txt 2>/dev/null || \\\n  { mkdir -p /tmp/leak-test && echo 'aws_secret_access_key = \"AKIAIOSFODNN7EXAMPLE1234\"' > /tmp/leak-test/config.txt; }",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
         "command": "trivy fs --scanners secret /tmp/leak-test",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "conditional-tool"
       },
       {
         "command": "rm -rf /tmp/leak-test",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
         "command": "trivy config labs/lab05-iac-terraform",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "conditional-tool"
       },
       {
         "command": "trivy config labs/lab06-kubernetes-kind",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "conditional-tool"
       },
       {
         "command": "cat labs/lab07-devsecops/policy/labels.rego",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
         "command": "conftest test labs/lab06-kubernetes-kind/deployment-*.yaml \\\n  --policy labs/lab07-devsecops/policy",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "conditional-tool"
       },
       {
         "command": "kubectl kustomize labs/lab06-kubernetes-kind | \\\n  conftest test - --policy labs/lab07-devsecops/policy",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
         "command": "kubectl kustomize labs/lab06-kubernetes-kind | \\\n  conftest test - --policy labs/lab07-devsecops/policy",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       },
       {
         "command": "sed 's/order-service:lab02/order-service:latest/' \\\n  labs/lab06-kubernetes-kind/deployment-order.yaml | \\\n  conftest test - --policy labs/lab07-devsecops/policy",
-        "directory": "~/devopsplatformengr",
+        "directory": "\"$COURSE_HOME\"",
         "classification": "run"
       }
     ]

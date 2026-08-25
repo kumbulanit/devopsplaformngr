@@ -21,8 +21,29 @@ The script is **safe to run again at any time**: it checks each component and
 installs only what is missing, so a re-run on a healthy VM downloads nothing.
 If a tool goes missing later in the course, re-running it is the fix.
 
+First, find the repository and remember where it is. Every later lab starts
+from this directory, and the path differs depending on how the VM was
+prepared:
+
 ```bash
-cd ~/devopsplatformengr        # wherever you cloned the course repository
+# if the instructor pre-provisioned the VM, locate the repo:
+find ~ -maxdepth 3 -name lab-setup -type d 2>/dev/null
+```
+
+That prints something like `/home/student/devops-course/lab-setup` — the
+course repository is the directory **containing** `lab-setup`. Store it once
+so every lab can use `cd "$COURSE_HOME"`:
+
+```bash
+cd /home/student/devops-course          # <- the directory the find printed, minus /lab-setup
+echo "export COURSE_HOME=$(pwd)" >> ~/.bashrc
+export COURSE_HOME=$(pwd)
+echo "$COURSE_HOME"                     # sanity check: prints the repo path
+```
+
+Then install the toolchain:
+
+```bash
 ./lab-setup/install-ubuntu24.sh
 ```
 
@@ -118,6 +139,7 @@ kind delete cluster --name devops-course
 
 ## Completion Checklist
 
+- [ ] `echo "$COURSE_HOME"` prints the course repository path.
 - [ ] `check-environment.sh` reports all required checks PASS.
 - [ ] Sample app responds on `http://localhost:8000/health`.
 - [ ] `pytest` reports 5 passed.

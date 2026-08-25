@@ -50,6 +50,7 @@ check "internet (GitHub)" required curl -fsI --max-time 10 https://github.com
 check "free disk >= 15GB" required bash -c '[ "$(df --output=avail -BG / | tail -1 | tr -dc 0-9)" -ge 15 ] && df -h / | tail -1'
 check "RAM >= 6GB"        required bash -c '[ "$(free -g | awk "/^Mem:/{print \$2}")" -ge 6 ] && free -h | head -2 | tail -1'
 check "act"               required act --version
+check "COURSE_HOME"       optional bash -c '[ -n "${COURSE_HOME:-}" ] && [ -d "${COURSE_HOME}/lab-setup" ] && echo "${COURSE_HOME}"' 
 
 echo
 printf '%-6s %-22s %s\n' "STATUS" "CHECK" "DETAIL"
@@ -65,5 +66,10 @@ if [[ ${FAIL} -gt 0 ]]; then
   echo "Hint: after install-ubuntu24.sh, log out and back in (or run 'newgrp docker')"
   echo "      so Docker group membership takes effect."
   exit 1
+fi
+if [[ -z "${COURSE_HOME:-}" || ! -d "${COURSE_HOME}/lab-setup" ]]; then
+  echo "NOTE: COURSE_HOME is not set (labs use it to find this repository). Fix it with:"
+  echo "      echo \"export COURSE_HOME=${REPO_ROOT}\" >> ~/.bashrc && export COURSE_HOME=${REPO_ROOT}"
+  echo
 fi
 echo "RESULT: all required checks passed (${PASS}). You are ready for the course."

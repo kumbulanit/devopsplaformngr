@@ -35,7 +35,7 @@ a build should fail only on findings you can actually action.
 ## Part B — Repository Secret Scan
 
 ```bash
-cd ~/devopsplatformengr
+cd "$COURSE_HOME"
 trivy fs --scanners secret .
 ```
 
