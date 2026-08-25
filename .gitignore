@@ -34,3 +34,11 @@ lab-command-report.md
 
 # Verification tooling binaries (downloaded on demand by verify/prepare-binaries.sh)
 verify/bin/
+
+# Content-authoring automation — kept locally, deliberately NOT checked in.
+# The repository ships the finished artefacts (PPTX decks, PNG diagrams, lab
+# content); the scripts that generate them are the author's working tools.
+slides/build_slides.py
+slides/requirements-authoring.txt
+diagrams/build_diagrams.py
+lab-setup/create-labs.sh
