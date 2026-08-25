@@ -8,6 +8,11 @@
   **Ubuntu 24.04 VM**, all services on **localhost**
 - **Deliverables:** PPTX decks (shared with participants), original diagrams,
   10 labs, platform canvas, quizzes
+- **Deck layout (Day 1 and Day 2):** every core topic runs *summary → Deep
+  Dive(s) → diagram → In Context (central-bank worked example)*. Presenting the summary
+  and diagram slides keeps the module inside its timebox; the Deep Dive and
+  In Context slides are written to be read afterwards as the participant
+  reference, and carry the discussion prompts and exercises.
 
 ## Before the Course (critical)
 

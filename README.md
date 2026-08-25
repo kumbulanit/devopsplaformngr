@@ -114,6 +114,16 @@ kubectl, Terraform, Trivy, Conftest, tmux, jq, Python — is installed by
 3. **Slides** are designed to be presented and then **shared with
    participants** — speaker notes carry the delivery guidance, the slides
    carry the content.
+4. **Slide structure (both decks).** Every core topic in Modules 1–11 runs as
+   a sequence: a **summary** slide (the talking points), one or two **Deep
+   Dive** slides (every bullet expanded with mechanism, evidence, examples and
+   anti-patterns), a **diagram**, and an **In Context** slide applying the
+   topic to a central-bank environment. When running to time, present the
+   summary + diagram and leave the Deep Dive / In Context slides as the
+   participant reference; when the room wants depth, teach straight through.
+   The *In Context* slides are illustrative teaching scenarios built from
+   publicly known central-bank functions — they are not descriptions of any
+   institution's internal systems, and the deck says so on the first one.
 
 ## Regenerating Slides & Diagrams (authors only)
 
