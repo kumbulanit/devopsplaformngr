@@ -98,10 +98,11 @@ The capstone (Lab 09) ties all three together as one golden path. Labs 01,
 
 One **Ubuntu 24.04 LTS VM per participant** (4 vCPU / 8 GB RAM / 30 GB disk
 recommended). The full toolchain — Git, Docker Engine + Compose, kind,
-kubectl, Terraform, Trivy, Conftest, tmux, jq, Python — is installed by
-`lab-setup/install-ubuntu24.sh` and verified by
-`lab-setup/check-environment.sh`. Lab 04 optionally uses a GitHub account
-(local fallback with `act` is documented).
+kubectl, Terraform, Trivy, Conftest, `act`, tmux, jq, Python — is installed
+by `lab-setup/install-ubuntu24.sh` and verified by
+`lab-setup/check-environment.sh`. **No cloud or SaaS account is required for
+any lab:** Lab 04 runs its GitHub Actions workflow locally with `act`, and
+pushing that same workflow to GitHub is an optional final part.
 
 ## How to Use This Package
 

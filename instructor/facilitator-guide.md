@@ -28,7 +28,9 @@
    person — labs hardcode localhost ports (8080, 8001, 8090–8092, 9090,
    3000, 30080) and a kind cluster name, so a shared machine collides.
 4. Day 1 needs outbound internet (image pulls, Terraform providers, GitHub).
-   Lab 04 additionally needs participant GitHub accounts **or** `act`.
+   Lab 04 runs entirely on the VM with `act` (installed by the setup script,
+   runner image pre-pulled). GitHub accounts are only needed for Lab 04
+   Part D, which is optional.
 
 ## Course Format (matches the sold outline)
 

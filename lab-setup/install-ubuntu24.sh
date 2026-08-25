@@ -189,6 +189,28 @@ if ! command -v conftest >/dev/null 2>&1; then
   run_cmd_local rm -f /tmp/conftest /tmp/conftest.tar.gz
 fi
 
+log "Installing act (runs GitHub Actions workflows locally, Lab 04)"
+ACT_VERSION="0.2.68"
+# act release assets use x86_64 / arm64
+ACT_ARCH=$(uname -m); [[ "${ACT_ARCH}" == "aarch64" ]] && ACT_ARCH="arm64"
+if ! command -v act >/dev/null 2>&1; then
+  if run_cmd_local curl -fsSL -o /tmp/act.tar.gz \
+      "https://github.com/nektos/act/releases/download/v${ACT_VERSION}/act_Linux_${ACT_ARCH}.tar.gz"; then
+    run_cmd_local tar -xzf /tmp/act.tar.gz -C /tmp act
+    run_cmd install -m 0755 /tmp/act /usr/local/bin/act
+    run_cmd_local rm -f /tmp/act /tmp/act.tar.gz
+  else
+    log "Pinned act download failed; falling back to the upstream installer"
+    run_cmd sh -c 'curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | bash -s -- -b /usr/local/bin' \
+      || log "act install failed; Lab 04 Part D (GitHub) still works, Parts B-C need act"
+  fi
+fi
+# Pre-pull the runner image so Lab 04 does not wait on classroom Wi-Fi (~1 GB).
+if command -v act >/dev/null 2>&1 && command -v docker >/dev/null 2>&1; then
+  run_cmd docker pull catthehacker/ubuntu:act-latest \
+    || log "act runner image pre-pull failed; the first 'act' run will download it"
+fi
+
 log "Creating Python virtual environment for the sample app"
 if [[ -d "${REPO_ROOT}/labs/app" ]]; then
   run_cmd_local python3 -m venv "${REPO_ROOT}/labs/app/.venv"
@@ -207,6 +229,7 @@ log "  kubectl version --client"
 log "  terraform -version"
 log "  trivy --version"
 log "  conftest --version"
+log "  act --version"
 log "  ${REPO_ROOT}/labs/app/.venv/bin/python --version"
 log ""
 log "Now run the preflight check:"

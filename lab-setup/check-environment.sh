@@ -49,7 +49,7 @@ check "curl"              required curl --version
 check "internet (GitHub)" required curl -fsI --max-time 10 https://github.com
 check "free disk >= 15GB" required bash -c '[ "$(df --output=avail -BG / | tail -1 | tr -dc 0-9)" -ge 15 ] && df -h / | tail -1'
 check "RAM >= 6GB"        required bash -c '[ "$(free -g | awk "/^Mem:/{print \$2}")" -ge 6 ] && free -h | head -2 | tail -1'
-check "act (optional)"    optional act --version
+check "act"               required act --version
 
 echo
 printf '%-6s %-22s %s\n' "STATUS" "CHECK" "DETAIL"
