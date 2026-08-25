@@ -8,7 +8,7 @@ localhost** — no cloud account, no cost, full cleanup.
 
 ```text
 ├── slides/                          # Theory PPTX decks (shared with participants)
-├── diagrams/                        # Original PNG diagrams + generator
+├── diagrams/                        # Original PNG diagrams
 ├── labs/
 │   ├── app/                         # Shared sample microservices (order + payment)
 │   ├── lab00-environment-setup/     # Verify the pre-baked toolchain
@@ -114,18 +114,23 @@ kubectl, Terraform, Trivy, Conftest, tmux, jq, Python — is installed by
 3. **Slides** are designed to be presented and then **shared with
    participants** — speaker notes carry the delivery guidance, the slides
    carry the content.
+4. **Slide structure (both decks).** Every core topic in Modules 1–11 runs as
+   a sequence: a **summary** slide (the talking points), one or two **Deep
+   Dive** slides (every bullet expanded with mechanism, evidence, examples and
+   anti-patterns), a **diagram**, and an **In Context** slide applying the
+   topic to a central-bank environment. When running to time, present the
+   summary + diagram and leave the Deep Dive / In Context slides as the
+   participant reference; when the room wants depth, teach straight through.
+   The *In Context* slides are illustrative teaching scenarios built from
+   publicly known central-bank functions — they are not descriptions of any
+   institution's internal systems, and the deck says so on the first one.
 
-## Regenerating Slides & Diagrams (authors only)
+## Slides & Diagrams
 
-Authoring dependencies are separate from the student toolchain:
-
-```bash
-python3 -m venv .venv-author
-source .venv-author/bin/activate
-pip install -r slides/requirements-authoring.txt
-python3 diagrams/build_diagrams.py     # regenerates diagrams/*.png
-python3 slides/build_slides.py         # regenerates both PPTX decks (idempotent)
-```
+The decks in `slides/` and the PNGs in `diagrams/` are the deliverables and are
+committed as finished artefacts. The scripts that generate them are authoring
+tools kept outside version control (see `.gitignore`) — this repository holds
+the course material, not the machinery used to produce it.
 
 ## Quality Checks
 

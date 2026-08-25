@@ -26,13 +26,7 @@ The installer sets up:
 - Terraform
 - The Python virtual environment for the sample app in `labs/app/.venv`
 
-## Create the lab directories
+## Lab directories
 
-From the repository root:
-
-```bash
-chmod +x lab-setup/create-labs.sh
-./lab-setup/create-labs.sh
-```
-
-This script creates or confirms the `labs/lab00-environment-setup` through `labs/lab08-observability` directories and adds a starter `README.md` if a lab folder is missing.
+All labs (`labs/lab00-environment-setup` through `labs/lab09-capstone`) ship
+with the repository — nothing needs scaffolding.
