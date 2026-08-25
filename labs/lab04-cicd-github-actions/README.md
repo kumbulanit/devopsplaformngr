@@ -28,7 +28,7 @@ executing the same YAML.
 1. Put the workflow where a runner expects to find it:
 
 ```bash
-cd ~/devopsplatformengr
+cd "$COURSE_HOME"
 mkdir -p .github/workflows
 cp labs/lab04-cicd-github-actions/.github/workflows/ci.yml .github/workflows/ci.yml
 ```
@@ -68,7 +68,7 @@ act --version
 2. List what `act` found in the workflow:
 
 ```bash
-cd ~/devopsplatformengr
+cd "$COURSE_HOME"
 act -l
 ```
 
@@ -212,6 +212,8 @@ provides on the golden path.
 
 | Symptom | Fix |
 |---------|-----|
+| `cd: $COURSE_HOME: No such file or directory` | `COURSE_HOME` is not set. Find the repo and set it: `find ~ -maxdepth 4 -name lab-setup -type d`, then `export COURSE_HOME=<the directory containing lab-setup>` (Lab 00 Part A). |
+| `Error: stat .../.github/workflows: no such file or directory` | `act` reads the workflow from the **current directory**. `cd "$COURSE_HOME"` first, and make sure Part A step 1 copied `ci.yml` into `.github/workflows/`. |
 | `act: command not found` | `curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh \| sudo bash -s -- -b /usr/local/bin` |
 | `act` cannot pull the runner image | `act -P ubuntu-latest=catthehacker/ubuntu:act-latest` |
 | `act` cannot reach Docker | You must be in the `docker` group: `newgrp docker`, or log out and back in. |
@@ -253,7 +255,7 @@ Note the job-level `permissions` — the default token cannot write packages.
 
 ```bash
 # remove the local copy of the workflow if you do not want to commit it
-rm -f ~/devopsplatformengr/.github/workflows/ci.yml
+rm -f "$COURSE_HOME"/.github/workflows/ci.yml
 
 # act's runner images are large; reclaim the space when you are done
 docker image ls | grep act

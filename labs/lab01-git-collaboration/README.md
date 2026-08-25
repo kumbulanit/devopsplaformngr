@@ -37,7 +37,7 @@ git commit -m "Initial order and payment services"
 The tests still run from the course venv:
 
 ```bash
-source ~/devopsplatformengr/labs/app/.venv/bin/activate
+source "$COURSE_HOME"/labs/app/.venv/bin/activate
 pytest
 # Expected: 5 passed
 ```
@@ -157,7 +157,7 @@ pytest
 | Symptom | Fix |
 |---------|-----|
 | Merge conflict | Open the file, resolve the markers, then `git add` and `git commit`. |
-| `pytest` not found | Activate the venv: `source ~/devopsplatformengr/labs/app/.venv/bin/activate`. |
+| `pytest` not found | Activate the venv: `source "$COURSE_HOME"/labs/app/.venv/bin/activate`. |
 | Reviewer clone cannot see the branch | Push the branch to the bare repo first (Part B step 1). |
 | `main` vs `master` mismatch | Re-run setup with `git init -b main`. |
 

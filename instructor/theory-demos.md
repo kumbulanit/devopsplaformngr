@@ -22,7 +22,7 @@ participant's Ubuntu VM localhost (or on paper). The three big workshops
 ## Module 1 — Preflight check (5 min, everyone)
 
 ```bash
-cd ~/devopsplatformengr
+cd "$COURSE_HOME"
 ./lab-setup/check-environment.sh
 ```
 
@@ -54,7 +54,7 @@ DORA numbers. Instructor collects a show of hands on lead time
 ## Module 4 — Ansible idempotence, live (10 min, everyone)
 
 ```bash
-cd ~/devopsplatformengr/labs/lab05-iac-terraform/ansible-bonus
+cd "$COURSE_HOME"/labs/lab05-iac-terraform/ansible-bonus
 sudo apt-get install -y ansible   # pre-baked VMs already have it
 ansible-playbook site.yml         # watch: changed=N
 ansible-playbook site.yml         # watch: changed=0  <- the lesson
@@ -69,7 +69,7 @@ One minute of output teaches idempotence better than any slide.
 No execution — pure reading, as preparation for Workshop 1:
 
 ```bash
-less ~/devopsplatformengr/labs/lab04-cicd-github-actions/.github/workflows/ci.yml
+less "$COURSE_HOME"/labs/lab04-cicd-github-actions/.github/workflows/ci.yml
 ```
 
 Pairs answer: 1) Draw the job graph — what runs in parallel? 2) Which Trivy
@@ -80,7 +80,7 @@ Then show, in one command, that this file is executable on the VM — no
 GitHub, no account:
 
 ```bash
-act -l -W ~/devopsplatformengr/labs/lab04-cicd-github-actions/.github/workflows/ci.yml
+act -l -W "$COURSE_HOME"/labs/lab04-cicd-github-actions/.github/workflows/ci.yml
 ```
 
 That is Workshop 1's starting point: participants run the pipeline locally
@@ -103,7 +103,7 @@ processes wearing isolation." (Full build/deploy is Workshop 2.)
 ## Module 7 — Scan + one policy (10 min, everyone)
 
 ```bash
-cd ~/devopsplatformengr
+cd "$COURSE_HOME"
 trivy image --severity HIGH,CRITICAL order-service:lab02        # triage one finding aloud
 conftest test labs/lab06-kubernetes-kind/deployment-order.yaml \
   --policy labs/lab07-devsecops/policy                          # FAILS (no label)
@@ -117,7 +117,7 @@ The raw-vs-rendered contrast is the punchline: *test what ships.*
 ## Module 8 — Mini incident (15 min, everyone)
 
 ```bash
-cd ~/devopsplatformengr/labs/lab08-observability
+cd "$COURSE_HOME"/labs/lab08-observability
 docker compose -f docker-compose.observability.yml up -d --build
 # generate traffic:
 for i in {1..30}; do curl -s -X POST http://localhost:8080/orders \

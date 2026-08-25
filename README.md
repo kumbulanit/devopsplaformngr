@@ -32,14 +32,29 @@ localhost** — no cloud account, no cost, full cleanup.
 ## Quick Start (participants)
 
 ```bash
-git clone <this-repo> ~/devopsplatformengr
-cd ~/devopsplatformengr
-./lab-setup/install-ubuntu24.sh     # installs the full toolchain
+git clone https://github.com/kumbulanit/devopsplaformngr.git ~/devops-course
+cd ~/devops-course
+
+# remember where the repo lives, so every lab can find it
+echo "export COURSE_HOME=$(pwd)" >> ~/.bashrc && export COURSE_HOME=$(pwd)
+
+./lab-setup/install-ubuntu24.sh     # installs the full toolchain (safe to re-run)
 # log out and back in (docker group), then:
 ./lab-setup/check-environment.sh    # must end with: all required checks passed
 ```
 
-Then follow `labs/lab00-environment-setup/README.md` and each lab in order.
+**Already provisioned by your instructor?** The repository may be anywhere on
+the VM — find it and set `COURSE_HOME` to that path:
+
+```bash
+find ~ -maxdepth 3 -name lab-setup -type d 2>/dev/null
+# then, using the directory that contains lab-setup/:
+echo "export COURSE_HOME=/path/to/repo" >> ~/.bashrc && source ~/.bashrc
+```
+
+Every lab runs **from the repository root** — `cd "$COURSE_HOME"` gets you
+there from anywhere. Then follow `labs/lab00-environment-setup/README.md` and
+each lab in order.
 
 ## Course Format
 
