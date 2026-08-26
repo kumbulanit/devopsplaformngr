@@ -373,86 +373,88 @@ docker ps -aq | xargs -r docker rm -f      # everything, if you are finished
 
 ---
 
-## Part H — Optional: Watch the Pipeline in a Web UI (30 min)
+## Part H — See the Pipeline in a Web UI (30 min)
 
-`act` has no web interface. **Gitea** does — and Gitea Actions runs the same
-workflow file using act underneath, so nothing about your pipeline changes.
-You get a browser view of runs, jobs, live logs and re-run buttons, entirely
-on your VM.
+`act` is a command-line tool: no web interface. To *watch* a pipeline — jobs,
+steps, live logs, re-run buttons — you need something that hosts runs. This
+part gives you that on localhost, running **the same `ci-cd.yml` you already
+have**, so every box on the screen maps to a block in your YAML.
 
-**1. Start Gitea:**
+**1. Start it — one script:**
 
 ```bash
-mkdir -p /tmp/gitea && cd /tmp/gitea
-cat > docker-compose.yml <<'EOF'
-services:
-  gitea:
-    image: gitea/gitea:1.22
-    container_name: lab-gitea
-    environment:
-      GITEA__server__ROOT_URL: http://localhost:3001/
-      GITEA__actions__ENABLED: "true"
-      GITEA__security__INSTALL_LOCK: "true"
-    ports: ["3001:3000"]
-    volumes: ["gitea-data:/data"]
-volumes:
-  gitea-data:
-EOF
-docker compose up -d
-until curl -sf localhost:3001/api/healthz >/dev/null; do sleep 2; done
-echo "Gitea is up on http://localhost:3001"
+cd "$COURSE_HOME"/labs/lab-day1/pipeline-ui
+./setup.sh --push
 ```
 
-**2. Create a user and register a runner:**
+That starts Gitea (a self-hosted git forge) plus its Actions runner, creates
+a user, registers the runner, creates the repository, and pushes `/tmp/day1`
+to it — which triggers a run. It is safe to re-run; every step checks first.
+
+**2. Open the UI:**
+
+<http://localhost:3001/lab/order-service/actions> — log in as
+`lab` / `labpass123`.
+
+**3. Read the screen against the file.** Open `ci-cd.yml` beside the browser:
+
+| In the YAML | On the screen |
+|-------------|---------------|
+| `name: CI/CD — Order Service` | the run title |
+| each `jobs:` key (`test`, `build`, `security-scan`, `deploy`) | one row in the left-hand job list |
+| `needs:` | why `deploy` sits idle until the two above it are green |
+| each `- name:` under `steps:` | one collapsible line in the log pane |
+| `run:` contents | the commands echoed in that step's log |
+| a step's exit code | the ✅ / ❌ on that line |
+
+Click `deploy`, expand **Smoke test**, and watch it poll until the container
+answers. That is the same output `act` printed in Part C — the pipeline did
+not change, only where you are watching it from.
+
+**4. Trigger another run and watch it live:**
 
 ```bash
-docker exec -u git lab-gitea gitea admin user create \
-  --admin --username lab --password labpass123 --email lab@example.com
-
-TOKEN=$(docker exec -u git lab-gitea gitea actions generate-runner-token | tr -d '\r\n')
-
-docker run -d --name lab-runner --network gitea_default \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -e GITEA_INSTANCE_URL=http://gitea:3000 \
-  -e GITEA_RUNNER_REGISTRATION_TOKEN="$TOKEN" \
-  -e GITEA_RUNNER_NAME=lab-runner \
-  gitea/act_runner:latest
-
-docker logs lab-runner 2>&1 | grep -i "registered successfully"
-```
-
-**3. Create the repository and push to it:**
-
-```bash
-curl -s -u lab:labpass123 -X POST localhost:3001/api/v1/user/repos \
-  -H 'content-type: application/json' \
-  -d '{"name":"order-service","private":false}' -o /dev/null -w '%{http_code}\n'
-
 cd /tmp/day1
-git remote add gitea http://lab:labpass123@localhost:3001/lab/order-service.git
+sed -i 's/"day1-demo"/"day1-demo-v2"/' labs/app/main.py
+git commit -qam "feat: bump the environment label"
 git push gitea main
 ```
 
-**4. Watch it run in the browser:**
+Refresh the Actions tab — a new run appears and moves through the stages.
 
-Open <http://localhost:3001/lab/order-service/actions> and log in as
-`lab` / `labpass123`. You will see the run, its four jobs, and live logs —
-click into `deploy` to watch the smoke test.
-
-> **Be patient on the first run.** The runner downloads its own image (~1 GB)
-> before the first job starts, so run 1 can take several minutes with nothing
-> visible happening. Later runs start immediately.
-
-**What this demonstrates:** the workflow file is portable. Same YAML, three
-different places to run it — your terminal (`act`), a self-hosted forge with
-a UI (Gitea), or GitHub. The pipeline is yours; the runner is a detail.
-
-**Clean up:**
+**5. Tear it down:**
 
 ```bash
-docker rm -f lab-runner
-cd /tmp/gitea && docker compose down -v
+cd "$COURSE_HOME"/labs/lab-day1/pipeline-ui
+./setup.sh --down
 ```
+
+### Why this one
+
+Gitea Actions **uses act underneath**, so the workflow file is identical
+across all three places you can run it — your terminal, this UI, or GitHub.
+Nothing about the pipeline is UI-specific.
+
+If you want a UI for **deployments** rather than builds, Argo CD does the same
+job for Kubernetes and can be installed into the kind cluster from Lab Day 2.
+If your organisation runs **Jenkins**, its stage view is the equivalent screen
+— the deck carries the matching `Jenkinsfile`.
+
+### Expectations and troubleshooting
+
+| Symptom | What to do |
+|---------|------------|
+| First run is slow | The runner reuses the act image the installer pre-pulled, but the job still pulls the Trivy image once. Later runs are much faster. |
+| A job hangs with no log output | The runner lost its connection to Gitea. `docker restart lab-runner`, then re-run the job from the UI. |
+| Runner log shows `lookup gitea ... i/o timeout` | Same cause — Docker's embedded DNS. Restart the runner. |
+| `Repository already exists` | Expected on re-run; the script continues. |
+| Port 3001 in use | Change the published port in `pipeline-ui/docker-compose.yml`. |
+
+> **Status of this part:** the setup, runner registration, push, run trigger
+> and live job execution were verified. A complete four-job run through the
+> UI has not yet been confirmed end to end on a clean Ubuntu VM — do one
+> practice run before teaching it, and keep Part C (`act`) as the path you
+> rely on in class.
 
 ---
 

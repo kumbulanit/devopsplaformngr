@@ -324,7 +324,8 @@ else
   mark_failed "act (Lab 04 Parts B-C need it)"
 fi
 
-# Pre-pull the runner image so Lab 04 starts in seconds (~1 GB, once).
+# Pre-pull the images the pipeline uses, so a lab never waits on classroom
+# Wi-Fi: the act/Gitea runner image (~1 GB) and the Trivy scanner image.
 ACT_RUNNER_IMAGE="catthehacker/ubuntu:act-latest"
 if have act && have docker; then
   if ! docker info >/dev/null 2>&1; then
@@ -335,6 +336,17 @@ if have act && have docker; then
     mark_installed "act runner image"
   else
     log "act runner image pre-pull failed; the first 'act' run will download it"
+  fi
+fi
+
+# The CI/CD workflow runs Trivy as a container, so pre-pull that too.
+if have docker && docker info >/dev/null 2>&1; then
+  if docker image inspect aquasec/trivy:latest >/dev/null 2>&1; then
+    mark_present "Trivy scanner image"
+  elif run_cmd_local docker pull aquasec/trivy:latest; then
+    mark_installed "Trivy scanner image"
+  else
+    log "Trivy image pre-pull failed; the pipeline will pull it on first run"
   fi
 fi
 

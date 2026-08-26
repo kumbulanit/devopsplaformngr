@@ -1,0 +1,47 @@
+# A pipeline web UI on localhost: Gitea (a self-hosted git forge) plus its
+# Actions runner. Gitea Actions runs the SAME workflow YAML as `act` - it uses
+# act underneath - so the UI shows your jobs and steps exactly as you wrote
+# them in .github/workflows/ci-cd.yml.
+#
+# Started for you by ./setup.sh - see the lab.
+services:
+  gitea:
+    image: gitea/gitea:1.22
+    container_name: lab-gitea
+    environment:
+      GITEA__server__ROOT_URL: http://localhost:3001/
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__actions__ENABLED: "true"
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__service__DISABLE_REGISTRATION: "false"
+      # Keep the demo light: no cron jobs, no mailer.
+      GITEA__cron__ENABLED: "false"
+    ports:
+      - "3001:3000"
+    volumes:
+      - gitea-data:/data
+    restart: unless-stopped
+
+  runner:
+    image: gitea/act_runner:0.2.11
+    container_name: lab-runner
+    depends_on: [gitea]
+    environment:
+      # Reaches Gitea over the compose network. If the runner logs show
+      # "lookup gitea ... i/o timeout", restart it: docker restart lab-runner
+      GITEA_INSTANCE_URL: http://gitea:3000
+      GITEA_RUNNER_REGISTRATION_TOKEN: ${RUNNER_TOKEN:?run ./setup.sh, which generates this}
+      GITEA_RUNNER_NAME: lab-runner
+      # Reuse the image act already pulled, so the first run does not download
+      # another gigabyte. One runner image serves both act and Gitea.
+      GITEA_RUNNER_LABELS: "ubuntu-latest:docker://catthehacker/ubuntu:act-latest"
+    volumes:
+      # The runner starts job containers on the host daemon, and the jobs
+      # themselves build and run images - so it needs the socket.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-data:/data
+    restart: unless-stopped
+
+volumes:
+  gitea-data:
+  runner-data:
