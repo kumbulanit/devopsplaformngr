@@ -7,9 +7,13 @@ localhost** — no cloud account, no cost, full cleanup.
 ## Package Contents
 
 ```text
-├── slides/                          # Theory PPTX decks (shared with participants)
+├── slides/                          # PPTX decks
+│   ├── *-Day1.pptx  / *-Day2.pptx        # FULL decks - the participant reference
+│   └── *-Day1-Deliver.pptx / *-Day2-*    # what you PRESENT (58 / 66 slides)
 ├── diagrams/                        # Original PNG diagrams
 ├── labs/
+│   ├── lab-day1/                    # THE Day 1 lab (~2h15) - pipeline, gate, IaC
+│   ├── lab-day2/                    # THE Day 2 lab (~3h) - containers, K8s, sec, obs
 │   ├── app/                         # Shared sample microservices (order + payment)
 │   ├── lab00-environment-setup/     # Verify the pre-baked toolchain
 │   ├── lab01-git-collaboration/
@@ -121,15 +125,17 @@ pushing that same workflow to GitHub is an optional final part.
 
 ## How to Use This Package
 
-1. **Participants:** run the Quick Start, follow the theory demos in class,
-   and use `workshops/` for the three hands-on workshops. Every workshop has
-   success criteria — done means criteria checked. Labs 01/07/08 are yours
-   to run self-paced after the course.
+1. **Participants:** run the Quick Start, then follow `labs/lab-day1` on
+   Day 1 and `labs/lab-day2` on Day 2. Each part ends in a checkpoint — done
+   means the boxes are ticked. The numbered labs 00–09 are the long-form
+   versions to work through self-paced afterwards (`labs/README.md`).
 2. **Instructor:** read `instructor/facilitator-guide.md` (including the
    *Before the Course* section) and the speaker notes in the PPTX decks.
-3. **Slides** are designed to be presented and then **shared with
-   participants** — speaker notes carry the delivery guidance, the slides
-   carry the content.
+3. **Two decks per day.** Present the **`-Deliver`** deck (58 and 66 slides,
+   diagram-led, sized to the timetable). Hand out the full deck afterwards as
+   the written reference — it holds the deep dives, the central-bank worked
+   examples, the code samples and the tool profiles. Speaker notes carry the
+   delivery guidance in both.
 4. **Slide structure (both decks).** Every core topic in Modules 1–11 runs as
    a sequence: a **summary** slide (the talking points), one or two **Deep
    Dive** slides (every bullet expanded with mechanism, evidence, examples and

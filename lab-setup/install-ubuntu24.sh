@@ -176,6 +176,9 @@ apt_install_missing "Base packages" \
   ca-certificates curl gnupg lsb-release git software-properties-common \
   python3 python3-pip python3-venv tmux jq unzip apt-transport-https
 
+log "Checking Ansible (configuration management, Lab Day 1 Part E)"
+apt_install_missing "Ansible" ansible
+
 log "Checking Docker Engine and Compose plugin"
 if [[ ! -f /etc/apt/sources.list.d/docker.list ]]; then
   log "Adding the Docker apt repository"

@@ -112,6 +112,7 @@ check "internet (GitHub)" required curl -fsI --max-time 10 https://github.com
 check "free disk >= 15GB" required bash -c '[ "$(df --output=avail -BG / | tail -1 | tr -dc 0-9)" -ge 15 ] && df -h / | tail -1'
 check "RAM >= 6GB"        required bash -c '[ "$(free -g | awk "/^Mem:/{print \$2}")" -ge 6 ] && free -h | head -2 | tail -1'
 check "act"               required act --version
+check "ansible"           required ansible --version
 check "COURSE_HOME"       optional bash -c '[ -n "${COURSE_HOME:-}" ] && [ -d "${COURSE_HOME}/lab-setup" ] && echo "${COURSE_HOME}"' 
 
 echo

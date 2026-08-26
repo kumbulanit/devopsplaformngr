@@ -42,29 +42,52 @@ also the participant reference after the course.
 
 ## Day 1 — Running Order
 
+**Present `DevOps-PlatformEngineering-Day1-Deliver.pptx` (58 slides).** The
+full 141-slide deck is the participant reference — hand it out, do not
+present it. Roughly 2 minutes per slide leaves room for discussion.
+
 | Time | Block | Facilitator notes |
 |------|-------|-------------------|
-| 08:30–09:00 | Welcome | Confirm every VM passed preflight before Module 1. |
-| 09:00–10:15 | Module 1 theory | History → Three Ways → CALMS → platform engineering. Demo: preflight together. |
-| 10:30–11:30 | Module 2 theory | Westrum + psychological safety + Conway. Exercise: self-assessment — keep it anonymous. |
-| 11:30–12:15 | Module 3 theory | Categories not brands. Exercise: toolchain mapping; collect lead-time show of hands. |
-| 13:00–14:15 | Module 4 theory | The deepest theory block. Demo: Ansible idempotence live — rehearse it. |
-| 14:15–15:15 | Module 5 theory | Report-vs-gate is the key slide. Demo: read the workflow in pairs. |
-| 15:30–17:15 | **Workshop 1** | Pipeline hands-on. Step 4 (break a test on purpose) is the payoff — do not cut it. |
-| 17:15–17:30 | Quiz + Q&A | |
+| 08:30–08:50 | Welcome + preflight | Confirm every VM passed `check-environment.sh` and `COURSE_HOME` is set. |
+| 08:50–09:35 | Module 1 | 13 slides, 7 diagrams. Lead with the wall-of-confusion and cognitive-load pictures. |
+| 09:35–10:00 | Module 2 | 9 slides. Westrum table + the 5-question self-score. Keep scoring private. |
+| 10:15–10:40 | Module 3 | 7 slides. Toolchain map exercise — collect the empty boxes for Module 9. |
+| 10:40–11:10 | Module 4 | 9 slides. Terraform plan output is the slide that matters. |
+| 11:10–11:45 | Module 5 | 9 slides. Report-vs-gate diagram, then straight into the lab. |
+| 11:45–12:30 | **Lab Day 1, Parts A–B** | App + tests, then the pipeline with `act`. First `act` run pulls the runner image — pre-pull it. |
+| 13:15–15:30 | **Lab Day 1, Parts C–E** | Gate fail/fix, Terraform plan→apply→drift, Ansible `changed=0`. |
+| 15:45–16:45 | Buffer / deeper dives | Overflow room. If ahead: tool profiles from the reference deck, or the SARB *In Context* slides. |
+| 16:45–17:15 | Debrief + quiz | Part F wrap-up table; Day 1 quiz. |
+| 17:15–17:30 | Q&A | |
 
 ## Day 2 — Running Order
 
+**Present `DevOps-PlatformEngineering-Day2-Deliver.pptx` (66 slides, 42%
+diagrams).**
+
 | Time | Block | Facilitator notes |
 |------|-------|-------------------|
-| 08:30–09:45 | Module 6 theory | Trade-offs honestly; 12-factor mapped to our app. Demo: container in 6 commands. |
-| 10:00–12:15 | **Workshop 2** | The big one: Docker → Compose → kind. Keep the cluster alive for the capstone. |
-| 13:00–13:50 | Module 7 theory | Scanner taxonomy + supply chain + triage. Demo: scan + raw-vs-rendered policy. |
-| 13:50–14:30 | Module 8 theory | SLO/error budgets + burn rates. Demo: mini incident — you are the saboteur. |
-| 14:30–15:30 | **Workshop 3** | Full Terraform loop + drift. Step 5 (cloud read-through) answers "why localhost?" |
-| 15:45–16:30 | Module 9 theory | Product thinking. Exercise: platform canvas — debrief boxes 8 and 9. |
-| 16:30–17:10 | Module 10 capstone | Pre-create cluster + pre-build images at lunch; script then runs in ~5 min. |
-| 17:10–17:30 | Module 11 + quiz | Commitments round: one action for the first week back. |
+| 08:30–08:45 | Recap | Yesterday's pipeline + IaC in 3 slides. Confirm Docker is running on every VM. |
+| 08:45–09:40 | Module 6 | 18 slides, 9 diagrams — the heaviest block. Container-vs-VM and the K8s object map carry it. |
+| 09:40–10:00 | Module 7 (part 1) | Shift-left + scanner taxonomy. Save policy-as-code for after the lab. |
+| 10:15–12:30 | **Lab Day 2, Parts A–C** | Image build, Compose, then Kubernetes. Create the kind cluster before the break if bandwidth is tight. |
+| 13:15–13:45 | Module 7 (part 2) + Module 8 | Policy as code, then SLOs and burn-rate alerting. |
+| 13:45–15:45 | **Lab Day 2, Parts D–F** | Scanning, policy gate, Prometheus/Grafana, game day. Part F is the emotional peak — protect the time. |
+| 16:00–16:40 | Module 9 | 9 slides. Platform canvas exercise; the ROI slide lands with senior attendees. |
+| 16:40–17:10 | Module 11 + quiz | Commitments round: one action for the first week back. |
+| 17:10–17:30 | Feedback + close | |
+
+### If you are running behind
+
+Cut in this order, and say what you are cutting and where to read it:
+
+1. The *In Context* (central-bank) slides — they are in the reference deck.
+2. Module 2 down to Westrum + psychological safety only.
+3. Module 3 to the toolchain diagram plus the exercise.
+4. Lab Day 2 Part B (Compose) — Part C covers service discovery again.
+
+**Never cut:** Lab Day 1 Part C (breaking the gate) or Lab Day 2 Part F
+(game day). Those two are where the learning actually lands.
 
 ## Common Pitfalls
 
