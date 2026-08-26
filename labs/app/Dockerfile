@@ -22,7 +22,9 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 COPY main.py .
 
-USER appuser
+# Numeric UID, not the name: with runAsNonRoot Kubernetes must be able to
+# verify the user is not root, and it cannot resolve names from the image.
+USER 1001
 EXPOSE 8000
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \

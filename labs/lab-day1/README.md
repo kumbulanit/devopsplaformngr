@@ -131,7 +131,8 @@ act --graph     # the dependency graph, drawn in the terminal
 
 
 
-Four jobs, in three stages:
+Four jobs, and `act -l` shows them in four stages — each one waits for the
+one before it:
 
 ```
   test  →  build  →  security-scan  →  deploy
@@ -173,7 +174,7 @@ steps ago is now serving traffic, and every stage in between was automated.
 
 **Checkpoint:**
 
-- [ ] `act -l` shows four jobs across three stages
+- [ ] `act -l` shows four jobs across four stages
 - [ ] `act push` ran test → build → scan → deploy in that order
 - [ ] `curl localhost:8081/health` returns your change
 

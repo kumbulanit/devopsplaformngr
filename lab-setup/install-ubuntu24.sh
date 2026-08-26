@@ -324,6 +324,27 @@ else
   mark_failed "act (Lab 04 Parts B-C need it)"
 fi
 
+# On its FIRST run act asks, interactively, which runner image to use - and in
+# a script or a classroom that prompt just kills the run with "fatal msg=EOF".
+# Writing actrc up front answers the question permanently.
+ACT_RC="${HOME}/.config/act/actrc"
+if [[ -f "${ACT_RC}" ]]; then
+  mark_present "act configuration"
+else
+  log "Writing ${ACT_RC} so act never prompts for a runner image"
+  run_cmd_local mkdir -p "$(dirname "${ACT_RC}")"
+  if cat > "${ACT_RC}" <<'ACTRC'
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+-P ubuntu-24.04=catthehacker/ubuntu:act-latest
+-P ubuntu-22.04=catthehacker/ubuntu:act-latest
+ACTRC
+  then
+    mark_installed "act configuration"
+  else
+    mark_failed "act configuration (~/.config/act/actrc)"
+  fi
+fi
+
 # Pre-pull the images the pipeline uses, so a lab never waits on classroom
 # Wi-Fi: the act/Gitea runner image (~1 GB) and the Trivy scanner image.
 ACT_RUNNER_IMAGE="catthehacker/ubuntu:act-latest"

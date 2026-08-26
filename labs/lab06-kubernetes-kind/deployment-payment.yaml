@@ -16,6 +16,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1001          # must be numeric for runAsNonRoot to be verifiable
         seccompProfile:
           type: RuntimeDefault
       containers:
