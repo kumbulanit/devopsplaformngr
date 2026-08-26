@@ -1,0 +1,101 @@
+# Lab Day 1 — the full path from a pushed commit to a running service.
+#
+#   push  ->  test  ->  build  ->  security scan  ->  deploy  ->  smoke test
+#
+# The same file runs three places without modification:
+#   * on your VM with act          (act push)
+#   * on a local Gitea instance    (git push, watched in a web UI)
+#   * on GitHub Actions            (git push to GitHub)
+#
+# Trivy runs as a container rather than a marketplace action so the workflow
+# behaves identically in all three.
+name: CI/CD — Order Service
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege: this pipeline only needs to read the repository.
+permissions:
+  contents: read
+
+env:
+  IMAGE: order-service
+
+jobs:
+  # ---------------------------------------------------------------- 1. TEST
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --quiet -r labs/app/requirements.txt
+
+      - name: Run the unit tests (fast feedback first)
+        working-directory: labs/app
+        run: pytest -q
+
+  # --------------------------------------------------------------- 2. BUILD
+  build:
+    runs-on: ubuntu-latest
+    needs: test                      # never build a commit whose tests failed
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image, tagged with the commit SHA
+        run: |
+          docker build -t "${IMAGE}:${GITHUB_SHA}" -f labs/app/Dockerfile labs/app
+          docker tag "${IMAGE}:${GITHUB_SHA}" "${IMAGE}:latest-built"
+          docker images "${IMAGE}"
+
+  # ------------------------------------------------------- 3. SECURITY SCAN
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Report — everything HIGH and CRITICAL (never fails the build)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image --scanners vuln \
+            --severity HIGH,CRITICAL --exit-code 0 --quiet \
+            "${IMAGE}:${GITHUB_SHA}"
+
+      - name: Gate — fail only on CRITICALs a developer can fix today
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image --scanners vuln \
+            --severity CRITICAL --ignore-unfixed --exit-code 1 --quiet \
+            "${IMAGE}:${GITHUB_SHA}"
+
+  # -------------------------------------------------------------- 4. DEPLOY
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, security-scan]    # both must pass before anything ships
+    steps:
+      - name: Deploy — replace the running container with the new image
+        run: |
+          docker rm -f day1-order 2>/dev/null || true
+          docker run -d --name day1-order -p 8081:8000 "${IMAGE}:${GITHUB_SHA}"
+          echo "deployed ${IMAGE}:${GITHUB_SHA} on http://localhost:8081"
+
+      - name: Smoke test — a deploy that "succeeded" but serves 500s is a failure
+        run: |
+          for i in $(seq 1 20); do
+            if docker exec day1-order python -c \
+              "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
+              echo "service is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "service never became healthy — rolling back would go here"
+          docker logs day1-order
+          exit 1

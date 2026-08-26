@@ -9,11 +9,14 @@ create its infrastructure from code — twice, to see idempotence.
 | Part | What you do | Time | Topic |
 |------|-------------|------|-------|
 | A | Run the app and its tests | 10 min | the thing we are shipping |
-| B | Pipeline: test → build → scan, locally with `act` | 40 min | CI/CD |
-| C | Break the security gate, then fix it | 20 min | DevSecOps |
-| D | Terraform: plan → apply → drift → destroy | 40 min | IaC |
-| E | Ansible: run it twice, see `changed=0` | 20 min | config management |
-| F | Wrap up: what you built | 5 min | — |
+| B | **Push a change** to a git remote | 10 min | source control |
+| C | The pipeline runs: **test → build → scan → deploy** | 35 min | CI/CD |
+| D | Break the security gate, then fix it | 20 min | DevSecOps |
+| E | Terraform: plan → apply → drift → destroy | 40 min | IaC |
+| F | Ansible: run it twice, see `changed=0` | 20 min | config management |
+| G | Wrap up: what you built | 5 min | — |
+
+Optional: **Part H** puts a real web UI in front of the same pipeline.
 
 > **Everything starts from the repository root.** If `cd "$COURSE_HOME"` fails,
 > set it first: `find ~ -maxdepth 4 -name lab-setup -type d`, then
@@ -52,70 +55,142 @@ is what Prometheus will scrape. Observability is built in, not bolted on.
 
 ---
 
-## Part B — The Pipeline, on Your VM (40 min)
+## Part B — Push a Change (10 min)
 
-`act` runs GitHub Actions workflows locally, in a container. Same YAML a
-hosted runner would execute — 30-second feedback, no account.
+A pipeline starts with a push, so let us make one. Everything stays on your
+VM: a bare repository plays the role of the remote.
 
-**1. Put the workflow where a runner looks for it:**
-
-```bash
-cd "$COURSE_HOME"
-mkdir -p .github/workflows
-cp labs/lab04-cicd-github-actions/.github/workflows/ci.yml .github/workflows/ci.yml
-```
-
-**2. Read it before you run it** — open `.github/workflows/ci.yml` and find:
-
-- three jobs: `test`, `build`, `security-scan`
-- `needs: test` — the dependency that orders the graph
-- `permissions: contents: read` — least-privilege token
-- Trivy appearing **twice**: a report step (`exit-code: "0"`) and a gate step
-  (`exit-code: "1"` + `ignore-unfixed: true`)
-
-**3. List what act found:**
+**1. Make a working copy with a remote** (never run `git init` inside the
+course repo):
 
 ```bash
-act -l
+mkdir -p /tmp/day1 && cp -r "$COURSE_HOME"/labs /tmp/day1/
+mkdir -p /tmp/day1/.github/workflows
+cp "$COURSE_HOME"/labs/lab-day1/ci-cd.yml /tmp/day1/.github/workflows/
+cd /tmp/day1
+rm -rf labs/app/.venv labs/app/__pycache__ labs/lab05-iac-terraform/.terraform*
+
+git init -qb main .
+git config user.email "you@example.com"
+git config user.name "Your Name"
+git add -A && git commit -qm "Order service + CI/CD pipeline"
+
+git init --bare -q /tmp/day1-remote.git
+git remote add origin /tmp/day1-remote.git
+git push -q origin main && echo "pushed to the remote"
 ```
 
-**4. Run the jobs one at a time:**
+**2. Now make the change you are going to ship** — add the service name to
+the health endpoint. In `/tmp/day1/labs/app/main.py`, find the `health()`
+function and change what it returns so `env` reads `"day1-demo"`:
 
 ```bash
-act -j test
-act -j build
-act -j security-scan
+cd /tmp/day1
+sed -i 's/env=APP_ENV/env="day1-demo"/' labs/app/main.py
+git diff --stat
 ```
 
-> First run only: act pulls a runner image (~1 GB) unless it was pre-pulled
-> during setup. After that, seconds.
+**3. Commit and push it — the way every change should arrive:**
 
-**5. Run the whole graph the way a push would:**
+```bash
+git checkout -b feature/health-env
+git add labs/app/main.py
+git commit -m "feat: report day1-demo as the environment"
+git push -q origin feature/health-env && echo "branch pushed"
+
+git checkout main
+git merge --no-ff -q feature/health-env -m "Merge feature/health-env"
+git push -q origin main && echo "merged to main - this is what triggers CI/CD"
+```
+
+**Checkpoint:**
+
+- [ ] `git log --oneline --graph --all` shows the branch and the merge
+- [ ] The remote has your commit: `git --git-dir=/tmp/day1-remote.git log --oneline -3`
+
+---
+
+## Part C — The Pipeline: Test → Build → Scan → Deploy (35 min)
+
+`act` runs the workflow exactly as a hosted runner would — same YAML, your
+machine, 30-second feedback, no account.
+
+**1. See the shape of the pipeline before you run it:**
+
+```bash
+cd /tmp/day1
+act -l          # jobs and the stage each one runs in
+act --graph     # the dependency graph, drawn in the terminal
+```
+
+> **Does act have a web UI?** No — `act` is a command-line tool. It gives you
+> `--graph` (above), live step-by-step output with ✅/❌ per step, and
+> `--json` for machine-readable logs. If you want a **real pipeline web UI on
+> your VM**, do Part H at the end: Gitea runs *this exact workflow file* and
+> shows the runs, jobs, live logs and re-run buttons in a browser.
+
+
+
+Four jobs, in three stages:
+
+```
+  test  →  build  →  security-scan  →  deploy
+```
+
+`deploy` declares `needs: [build, security-scan]`, so **nothing ships unless
+the tests passed AND the scan passed**.
+
+**2. Read `.github/workflows/ci-cd.yml`** and find:
+
+- `on: push` — the trigger. Nobody starts this by hand.
+- `needs:` on each job — the dependency graph you just drew.
+- Trivy twice: a **report** (`--exit-code 0`) and a **gate** (`--exit-code 1`
+  with `--ignore-unfixed`).
+- The **smoke test** after deploy — a deploy that "succeeded" but serves
+  errors is a failed deploy.
+
+**3. Run the whole thing, the way your push would have:**
 
 ```bash
 act push
 ```
 
-Watch `test` finish before `build` and `security-scan` start.
+> First run only: `act` pulls its runner image (~1 GB) unless the setup
+> script pre-pulled it. After that, runs start in seconds.
+
+Watch the order in the output: `test` completes, then `build`, then
+`security-scan`, and only then `deploy`.
+
+**4. Your change is now running — prove it:**
+
+```bash
+docker ps --filter name=day1-order --format '{{.Names}}	{{.Ports}}	{{.Status}}'
+curl -s localhost:8081/health | jq
+```
+
+The `env` field should read **`day1-demo`** — the change you committed two
+steps ago is now serving traffic, and every stage in between was automated.
 
 **Checkpoint:**
 
-- [ ] `test` green — 5 passed
-- [ ] `build` produced an image — `docker images order-service`
-- [ ] `security-scan` printed a CVE table and still passed
+- [ ] `act -l` shows four jobs across three stages
+- [ ] `act push` ran test → build → scan → deploy in that order
+- [ ] `curl localhost:8081/health` returns your change
 
 ---
 
-## Part C — Prove the Gate Works (20 min)
+## Part D — Prove the Gate Works (20 min)
 
 A gate you have never seen fail is a gate you do not understand.
 
-**1. Make it strict.** In `.github/workflows/ci.yml`, in the **Trivy gate**
-step (the second one, with `exit-code: "1"`), change:
+**1. Make it strict.** In `/tmp/day1/.github/workflows/ci-cd.yml`, find the
+**Gate** step in the `security-scan` job and change its severity line so it
+also fails on HIGH, and stop ignoring unfixable findings:
 
-```yaml
-          severity: CRITICAL,HIGH
-          ignore-unfixed: false
+```bash
+cd /tmp/day1
+sed -i 's/--severity CRITICAL --ignore-unfixed/--severity CRITICAL,HIGH/' \
+  .github/workflows/ci-cd.yml
 ```
 
 **2. Re-run just the scan:**
@@ -134,15 +209,16 @@ settings filter them out because they are lower severity or have no fix.
   things nobody can fix?
 - Where would you set the threshold for this service, and why?
 
-**4. Put it back** (`severity: CRITICAL`, `ignore-unfixed: true`) and confirm
-it is green:
+**4. Put it back and confirm it is green again:**
 
 ```bash
+sed -i 's/--severity CRITICAL,HIGH/--severity CRITICAL --ignore-unfixed/' \
+  .github/workflows/ci-cd.yml
 act -j security-scan
 ```
 
-**5. Now break something real** — in `labs/app/test_app.py` change an
-expected value so a test fails, then:
+**5. Now break something real** — in `/tmp/day1/labs/app/test_app.py` change
+an expected value so a test fails, then:
 
 ```bash
 act -j test          # red: the pipeline caught it
@@ -153,12 +229,12 @@ Undo the change and re-run to get back to green.
 **Checkpoint:**
 
 - [ ] You saw the gate fail and restored it
-- [ ] You saw a failing test stop the pipeline
+- [ ] You saw a failing test stop the pipeline — and `deploy` never ran
 - [ ] You can explain report-vs-gate in one sentence
 
 ---
 
-## Part D — Infrastructure as Code (40 min)
+## Part E — Infrastructure as Code (40 min)
 
 Same application, now with its infrastructure declared instead of clicked.
 
@@ -235,7 +311,7 @@ terraform destroy -auto-approve
 
 ---
 
-## Part E — Configuration Management (20 min)
+## Part F — Configuration Management (20 min)
 
 Terraform made infrastructure *exist*. Ansible makes an existing machine
 *correct* — and proves the same idempotence idea in a different tool.
@@ -273,13 +349,13 @@ ansible-playbook site.yml --check --diff
 
 ---
 
-## Part F — What You Built (5 min)
+## Part G — What You Built (5 min)
 
 In 2 hours you have:
 
 | | Practice | Module |
 |---|---|---|
-| ✔ | A pipeline that tests, builds and scans every change | 5 |
+| ✔ | A push that triggers test → build → scan → **deploy** | 5 |
 | ✔ | A security gate that genuinely stops the line — and stays fair | 5 + 7 |
 | ✔ | Infrastructure created, re-run safely, and drift-corrected | 4 |
 | ✔ | Configuration converged idempotently | 4 |
@@ -290,8 +366,92 @@ Kubernetes, scanned against policy, and put under an SLO with alerts.
 **Clean up if you are done for the day:**
 
 ```bash
-cd "$COURSE_HOME" && rm -f .github/workflows/ci.yml
-docker ps -aq | xargs -r docker rm -f
+docker rm -f day1-order 2>/dev/null
+rm -rf /tmp/day1 /tmp/day1-remote.git
+docker ps -aq | xargs -r docker rm -f      # everything, if you are finished
+```
+
+---
+
+## Part H — Optional: Watch the Pipeline in a Web UI (30 min)
+
+`act` has no web interface. **Gitea** does — and Gitea Actions runs the same
+workflow file using act underneath, so nothing about your pipeline changes.
+You get a browser view of runs, jobs, live logs and re-run buttons, entirely
+on your VM.
+
+**1. Start Gitea:**
+
+```bash
+mkdir -p /tmp/gitea && cd /tmp/gitea
+cat > docker-compose.yml <<'EOF'
+services:
+  gitea:
+    image: gitea/gitea:1.22
+    container_name: lab-gitea
+    environment:
+      GITEA__server__ROOT_URL: http://localhost:3001/
+      GITEA__actions__ENABLED: "true"
+      GITEA__security__INSTALL_LOCK: "true"
+    ports: ["3001:3000"]
+    volumes: ["gitea-data:/data"]
+volumes:
+  gitea-data:
+EOF
+docker compose up -d
+until curl -sf localhost:3001/api/healthz >/dev/null; do sleep 2; done
+echo "Gitea is up on http://localhost:3001"
+```
+
+**2. Create a user and register a runner:**
+
+```bash
+docker exec -u git lab-gitea gitea admin user create \
+  --admin --username lab --password labpass123 --email lab@example.com
+
+TOKEN=$(docker exec -u git lab-gitea gitea actions generate-runner-token | tr -d '\r\n')
+
+docker run -d --name lab-runner --network gitea_default \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e GITEA_INSTANCE_URL=http://gitea:3000 \
+  -e GITEA_RUNNER_REGISTRATION_TOKEN="$TOKEN" \
+  -e GITEA_RUNNER_NAME=lab-runner \
+  gitea/act_runner:latest
+
+docker logs lab-runner 2>&1 | grep -i "registered successfully"
+```
+
+**3. Create the repository and push to it:**
+
+```bash
+curl -s -u lab:labpass123 -X POST localhost:3001/api/v1/user/repos \
+  -H 'content-type: application/json' \
+  -d '{"name":"order-service","private":false}' -o /dev/null -w '%{http_code}\n'
+
+cd /tmp/day1
+git remote add gitea http://lab:labpass123@localhost:3001/lab/order-service.git
+git push gitea main
+```
+
+**4. Watch it run in the browser:**
+
+Open <http://localhost:3001/lab/order-service/actions> and log in as
+`lab` / `labpass123`. You will see the run, its four jobs, and live logs —
+click into `deploy` to watch the smoke test.
+
+> **Be patient on the first run.** The runner downloads its own image (~1 GB)
+> before the first job starts, so run 1 can take several minutes with nothing
+> visible happening. Later runs start immediately.
+
+**What this demonstrates:** the workflow file is portable. Same YAML, three
+different places to run it — your terminal (`act`), a self-hosted forge with
+a UI (Gitea), or GitHub. The pipeline is yours; the runner is a detail.
+
+**Clean up:**
+
+```bash
+docker rm -f lab-runner
+cd /tmp/gitea && docker compose down -v
 ```
 
 ---
