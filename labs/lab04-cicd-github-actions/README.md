@@ -111,12 +111,16 @@ start, because both declare `needs: test`.
 
 A gate you have never seen fail is a gate you do not understand. Force it.
 
-1. Temporarily make the gate strict — edit `.github/workflows/ci.yml` and in
-   the **Trivy gate** step change:
+1. Temporarily make the gate strict — this widens it to HIGH and stops
+   ignoring findings with no fix available:
 
-```yaml
-          severity: CRITICAL,HIGH
-          ignore-unfixed: false
+```bash
+cd "$COURSE_HOME"
+sed -i 's/          severity: CRITICAL$/          severity: CRITICAL,HIGH/; s/          ignore-unfixed: true/          ignore-unfixed: false/' \
+  .github/workflows/ci.yml
+
+# confirm the gate step now reads as expected
+grep -A6 "Trivy gate" .github/workflows/ci.yml
 ```
 
 2. Re-run just the scan:
@@ -226,12 +230,28 @@ provides on the golden path.
 
 **1. Run act with a secret** (local, no GitHub needed):
 
+Add a step that prints the secret, then watch act mask it:
+
 ```bash
-act -j test --secret MY_TOKEN=not-a-real-secret
+cd "$COURSE_HOME"
+python3 - <<'PY'
+from pathlib import Path
+p = Path(".github/workflows/ci.yml"); s = p.read_text()
+s = s.replace(
+    "      - name: Run tests",
+    "      - name: Show secret masking\n"
+    "        run: echo \"token is ${{ secrets.MY_TOKEN }}\"\n\n"
+    "      - name: Run tests", 1)
+p.write_text(s)
+print("step added")
+PY
+
+act -j test --secret MY_TOKEN=not-a-real-secret 2>&1 | grep -i "token is"
 ```
 
-Add a step that echoes `${{ secrets.MY_TOKEN }}` and watch GitHub-style secret
-masking appear in the log. Never put a real credential on the command line.
+The log shows `token is ***` — act masks anything passed as a secret. Never
+put a real credential on a command line; use a secrets file or your platform's
+secret store.
 
 **2. Push the image to GHCR** (needs Part D):
 

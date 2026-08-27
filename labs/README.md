@@ -40,6 +40,18 @@ The three `workshops/` guides orchestrate the numbered labs into longer
 blocks — useful if you are re-running the material with more time than a
 two-day course allows.
 
+## Copy and paste
+
+Every step in every lab is a command you can paste straight into the terminal.
+Where a lab needs a source file changed, the change is given as a command
+(`sed`, or a short `python3 - <<'PY'` block) rather than as "edit this file
+and add that line" — so nobody loses ten minutes to a typo or an indentation
+mistake, and everyone ends up with identical state.
+
+After each change the lab shows you how to see what happened, usually
+`git diff` or a `grep`. Read that: the point is to understand the edit, not
+just to apply it.
+
 ## Ground rules for every lab
 
 - Start from the repository root: `cd "$COURSE_HOME"`.

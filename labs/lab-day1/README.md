@@ -218,14 +218,28 @@ sed -i 's/--severity CRITICAL,HIGH/--severity CRITICAL --ignore-unfixed/' \
 act -j security-scan
 ```
 
-**5. Now break something real** — in `/tmp/day1/labs/app/test_app.py` change
-an expected value so a test fails, then:
+**5. Now break something real** — make a test fail and watch the pipeline
+catch it before anything is built or deployed:
 
 ```bash
-act -j test          # red: the pipeline caught it
+cd /tmp/day1
+sed -i 's/assert body\["status"\] == "ok"/assert body["status"] == "definitely-not-ok"/' \
+  labs/app/test_app.py
+git diff --stat labs/app/test_app.py
+
+act -j test          # RED - the pipeline caught it
 ```
 
-Undo the change and re-run to get back to green.
+Because `build`, `security-scan` and `deploy` all sit behind `needs:`, none of
+them ran. Nothing broken reached the deploy step.
+
+Now put it back and confirm green:
+
+```bash
+sed -i 's/assert body\["status"\] == "definitely-not-ok"/assert body["status"] == "ok"/' \
+  labs/app/test_app.py
+act -j test          # GREEN again
+```
 
 **Checkpoint:**
 

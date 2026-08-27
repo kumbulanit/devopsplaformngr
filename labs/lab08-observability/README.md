@@ -139,14 +139,46 @@ docker compose -f docker-compose.observability.yml down --volumes
 
 ## Stretch Goal — Instrument Your Own Metric
 
-Add a business metric to `labs/app/main.py`:
+Add a business metric to `labs/app/main.py` — copy and paste:
 
-```python
-ORDER_VALUE = Counter("order_value_total", "Cumulative value of orders")
-# in create_order(), after computing total:
-ORDER_VALUE.inc(total)
+```bash
+cd "$COURSE_HOME"
+python3 - <<'PY'
+from pathlib import Path
+p = Path("labs/app/main.py"); s = p.read_text()
+
+# 1. declare the counter next to the existing ones
+s = s.replace(
+    'REQUEST_DURATION = Histogram(',
+    'ORDER_VALUE = Counter(\n'
+    '    "order_value_total",\n'
+    '    "Cumulative value of all orders placed",\n'
+    ')\n\n'
+    'REQUEST_DURATION = Histogram(', 1)
+
+# 2. increment it where the order total is computed
+s = s.replace('    ORDERS.append(record)',
+              '    ORDER_VALUE.inc(total)\n    ORDERS.append(record)', 1)
+p.write_text(s)
+print("metric added")
+PY
+
+grep -n "ORDER_VALUE" labs/app/main.py
 ```
 
-Rebuild (`docker compose -f docker-compose.observability.yml up -d --build`),
-generate traffic, and graph `rate(order_value_total[5m])` — revenue per
-second. Observability is for **business** questions, not just CPU.
+Rebuild, generate traffic, then graph it:
+
+```bash
+cd labs/lab08-observability
+docker compose -f docker-compose.observability.yml up -d --build
+until curl -sf localhost:8080/health >/dev/null; do sleep 3; done
+for i in $(seq 1 20); do
+  curl -s -o /dev/null -X POST localhost:8080/orders \
+    -H 'content-type: application/json' \
+    -d '{"item":"latte","quantity":1,"price":4.0}'
+done
+curl -s localhost:8080/metrics | grep order_value_total
+```
+
+Then graph `rate(order_value_total[5m])` in Prometheus — revenue per second.
+Observability is for **business** questions, not just CPU.

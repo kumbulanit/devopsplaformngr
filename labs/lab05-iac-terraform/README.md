@@ -89,11 +89,21 @@ Discuss: what happens if someone deletes a container manually? (Try it:
 
 ## Part G — Change and Re-apply
 
-Edit `terraform.tfvars`, change `order_port` to `8092`, then:
+Change the published port from 8090 to 8092 — copy and paste:
 
 ```bash
+# create terraform.tfvars from the example if you have not already
+[ -f terraform.tfvars ] || cp terraform.tfvars.example terraform.tfvars
+
+# set the new port (adds the line if it is not there yet)
+grep -q '^order_port' terraform.tfvars \
+  && sed -i 's/^order_port.*/order_port = 8092/' terraform.tfvars \
+  || echo 'order_port = 8092' >> terraform.tfvars
+
+cat terraform.tfvars
+
 terraform plan
-terraform apply
+terraform apply -auto-approve
 curl http://localhost:8092/health
 ```
 

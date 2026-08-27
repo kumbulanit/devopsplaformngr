@@ -50,8 +50,30 @@ pytest
 git checkout -b feature/health-service-name
 ```
 
-2. Edit `main.py`: in the `HealthResponse` model add `service_name: str`,
-   and in the `health()` function return `service_name="order-service"`.
+2. Make the change. Two edits to `main.py` — add the field to the response
+   model, and populate it in the handler. Copy and paste:
+
+```bash
+# add the field to the HealthResponse model
+python3 - <<'PY'
+from pathlib import Path
+p = Path("main.py"); s = p.read_text()
+s = s.replace(
+    'class HealthResponse(BaseModel):\n    status: str\n    env: str\n    build_id: str',
+    'class HealthResponse(BaseModel):\n    status: str\n    env: str\n    build_id: str\n    service_name: str')
+s = s.replace(
+    '    return HealthResponse(\n        status="ok",',
+    '    return HealthResponse(\n        status="ok",\n        service_name="order-service",')
+p.write_text(s)
+print("main.py patched")
+PY
+
+# see exactly what you changed
+git diff main.py
+```
+
+   You should see two added lines: `service_name: str` in the model and
+   `service_name="order-service"` in the return.
 
 3. Run the tests to make sure nothing broke:
 
@@ -105,9 +127,24 @@ git diff main..feature/health-service-name
 - 💡 Consider adding a test for the new field.
 ```
 
-5. Back in `/tmp/lab01/app`, address the suggestion: add a test in
-   `test_app.py` asserting `service_name == "order-service"`. Commit and
-   push again.
+5. Back in `/tmp/lab01/app`, address the reviewer's suggestion by adding the
+   test. Copy and paste:
+
+```bash
+cd /tmp/lab01/app
+cat >> test_app.py <<'PY'
+
+
+def test_health_reports_service_name():
+    body = client.get("/health").json()
+    assert body["service_name"] == "order-service"
+PY
+
+pytest                       # expected: 6 passed
+git add test_app.py
+git commit -m "test: cover the new service_name field"
+git push local feature/health-service-name
+```
 
 6. Merge the branch:
 
