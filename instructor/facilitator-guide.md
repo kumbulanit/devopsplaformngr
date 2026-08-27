@@ -21,17 +21,7 @@
    membership is active, then run `lab-setup/check-environment.sh` and keep
    the output. This removes ~45 minutes of install risk from Day 1 and
    pre-downloads the Trivy DB.
-2. **Windows participants — check this a week ahead, not on the morning.**
-   They run the labs inside Ubuntu 24.04 on WSL2, set up by
-   `lab-setup\install-windows.ps1` (administrator PowerShell) and verified by
-   `lab-setup\check-windows.ps1`. Every lab command is then identical to
-   Linux. Two things bite in corporate estates and both need lead time:
-   **hardware virtualisation** may be disabled in BIOS/UEFI, and some managed
-   laptops **block WSL by policy** — that participant needs a Linux VM
-   instead. Docker Desktop is not required (Docker Engine is installed inside
-   the distro), which avoids its licensing question entirely. See
-   `lab-setup/WINDOWS.md`.
-6. **Send the preflight a week ahead** if participants bring their own VMs:
+2. **Send the preflight a week ahead** if participants bring their own VMs:
    they run the installer + `check-environment.sh` and send you the PASS
    table as their ticket in.
 3. VM sizing: **4 vCPU / 8 GB RAM / 30 GB disk** per participant. One VM per
@@ -102,10 +92,6 @@ Cut in this order, and say what you are cutting and where to read it:
 ## Common Pitfalls
 
 1. **Docker group not active** — the #1 issue: `newgrp docker` or re-login.
-   On Windows/WSL the same fix applies inside the Ubuntu terminal.
-2. **Windows: WSL memory** — kind plus the observability stack need ~6 GB.
-   `%UserProfile%\.wslconfig` sets it; after editing, `wsl --shutdown` in
-   PowerShell and reopen Ubuntu.
 2. **Port collisions** — labs use 8080, 8001, 8090–8092, 9090, 3000, 30080;
    `sudo ss -ltnp` finds the squatter.
 3. **VM memory pressure** — kind + observability stack together need ~6 GB;

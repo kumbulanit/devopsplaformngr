@@ -52,19 +52,6 @@ After each change the lab shows you how to see what happened, usually
 `git diff` or a `grep`. Read that: the point is to understand the edit, not
 just to apply it.
 
-## On Windows
-
-Work inside **Ubuntu 24.04 on WSL2** and every command in every lab is
-identical — you are running Linux. Two PowerShell scripts set it up:
-
-```powershell
-.\lab-setup\install-windows.ps1     # administrator PowerShell, once
-.\lab-setup\check-windows.ps1       # preflight, checks Windows AND Linux
-```
-
-Details, port mappings and troubleshooting: [`WINDOWS.md`](WINDOWS.md) and
-[`../lab-setup/WINDOWS.md`](../lab-setup/WINDOWS.md).
-
 ## Ground rules for every lab
 
 - Start from the repository root: `cd "$COURSE_HOME"`.

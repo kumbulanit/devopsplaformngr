@@ -18,11 +18,6 @@ create its infrastructure from code — twice, to see idempotence.
 
 Optional: **Part H** puts a real web UI in front of the same pipeline.
 
-> **On Windows?** Work inside the **Ubuntu-24.04** terminal (WSL2) — every
-> command below is then identical, and Part H's pipeline UI opens at http://localhost:3001.
-> Setup: [`lab-setup/WINDOWS.md`](../../lab-setup/WINDOWS.md) · running the labs:
-> [`labs/WINDOWS.md`](../WINDOWS.md)
-
 > **Everything starts from the repository root.** If `cd "$COURSE_HOME"` fails,
 > set it first: `find ~ -maxdepth 4 -name lab-setup -type d`, then
 > `export COURSE_HOME=<the directory containing lab-setup>`.

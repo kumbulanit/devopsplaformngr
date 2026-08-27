@@ -16,11 +16,6 @@ an alert that actually fires.
 | F | Game day: break it — and discover you cannot see it | 20 min | reliability |
 | G | Wrap up | 10 min | — |
 
-> **On Windows?** Work inside the **Ubuntu-24.04** terminal (WSL2) — every
-> command below is then identical, and the kind NodePort reaches your browser at http://localhost:30080.
-> Setup: [`lab-setup/WINDOWS.md`](../../lab-setup/WINDOWS.md) · running the labs:
-> [`labs/WINDOWS.md`](../WINDOWS.md)
-
 > Start from the repository root: `cd "$COURSE_HOME"`. If that fails, run
 > `find ~ -maxdepth 4 -name lab-setup -type d` and export `COURSE_HOME` to
 > the directory containing `lab-setup`.
