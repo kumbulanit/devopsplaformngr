@@ -1,4 +1,4 @@
-# DevOps & Platform Engineering — 2-Day Training Course
+# DevOps & Platform Engineering — 2-Day Training Course-BY KUMBULANI
 
 A complete, ready-to-deliver training package for a beginner-to-intermediate
 audience. **Every lab runs on a single Ubuntu 24.04 VM, entirely on
