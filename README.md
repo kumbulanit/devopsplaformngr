@@ -27,6 +27,7 @@ localhost** — no cloud account, no cost, full cleanup.
 │   └── lab09-capstone/              # Golden-path end-to-end
 ├── workshops/                       # THE 3 hands-on workshops (Module 10)
 ├── lab-setup/                       # install-ubuntu24.sh + check-environment.sh
+│                                    # + install-windows.ps1 / check-windows.ps1 (WSL2)
 ├── instructor/                      # Facilitator guide, solutions, canvas, theory demos
 ├── assessments/                     # Day 1 & 2 quizzes + answers
 ├── tools/                           # Extract & run every lab command (QA harness)
@@ -46,6 +47,22 @@ echo "export COURSE_HOME=$(pwd)" >> ~/.bashrc && export COURSE_HOME=$(pwd)
 # log out and back in (docker group), then:
 ./lab-setup/check-environment.sh    # must end with: all required checks passed
 ```
+
+### On Windows
+
+Run the labs inside Ubuntu 24.04 on WSL2 — every lab command is then the same
+as on Linux, and Ansible (which cannot run natively on Windows) works:
+
+```powershell
+# ADMINISTRATOR PowerShell, from the cloned repo:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\lab-setup\install-windows.ps1
+.\lab-setup\check-windows.ps1
+```
+
+That installs WSL2 + Ubuntu, sizes the VM, enables systemd, clones the repo
+inside Linux and runs the Linux installer. Docker Desktop is **not** required.
+Full guide: [`lab-setup/WINDOWS.md`](lab-setup/WINDOWS.md).
 
 **Already provisioned by your instructor?** The repository may be anywhere on
 the VM — find it and set `COURSE_HOME` to that path:
