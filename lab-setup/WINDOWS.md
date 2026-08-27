@@ -58,6 +58,28 @@ It is safe to re-run: every step checks whether it is already done. Use
 
 ---
 
+## How far this has been tested
+
+| | |
+|---|---|
+| PowerShell syntax | parsed with the PowerShell language parser — clean |
+| PSScriptAnalyzer | no errors (only deliberate `Write-Host` style warnings) |
+| Setup **logic** | 24 assertions across 9 scenarios — see below |
+| On a real Windows machine | **not yet** — do one dry run before the course |
+
+The logic is exercised off-Windows by mocking the environment probes:
+
+```bash
+pwsh -NoProfile -File lab-setup/tests/Test-WindowsSetup.ps1
+```
+
+It drives the installer through not-admin, an old Windows build, disabled
+virtualisation, no WSL, a missing distro, missing systemd, an idempotent
+re-run, a dry run and a full run — asserting on the `wsl.exe` calls each
+branch would make. Two real bugs were found and fixed this way: the exit code
+being returned as an array, and `-d` being swallowed by the parameter binder
+(which would have produced `wsl --install Ubuntu-24.04`).
+
 ## Requirements
 
 - Windows 10 build 19041 (version 2004) or newer, or Windows 11
