@@ -38,23 +38,39 @@ spec:
               drop: ["ALL"]
           resources:
             requests:
-              memory: "64Mi"
+              memory: "96Mi"
               cpu: "100m"
             limits:
-              memory: "128Mi"
-              cpu: "200m"
-          livenessProbe:
+              # Python + uvicorn needs headroom; 128Mi thrashes on a busy VM
+              # and makes /health answer too slowly for the probes.
+              memory: "256Mi"
+              cpu: "500m"
+          # STARTUP probe: gives a cold Python process up to 60s to come up.
+          # Without it, liveness can kill the container before it ever starts -
+          # the classic restart storm.
+          startupProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+          # READINESS decides whether this pod receives traffic.
           readinessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 3
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # LIVENESS decides whether to restart it. Deliberately slower and
+          # more forgiving than readiness.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service

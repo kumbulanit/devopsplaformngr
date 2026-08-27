@@ -242,15 +242,26 @@ itself, identically, every time, without anyone remembering it.
 
 ## Part E — Observability (30 min)
 
-**1. Start the stack** (app + Prometheus + Grafana):
+**1. Free port 8080 first.** This stack publishes the order service on 8080,
+the same port Part B used. If the Part B stack is still up, the new one
+starts without a published port and you end up curling the *old* services —
+with very confusing results in Part F:
+
+```bash
+cd "$COURSE_HOME"/labs/app && docker compose down
+docker ps --filter publish=8080 --format '{{.Names}}'   # must print nothing
+```
+
+**2. Start the stack** (app + Prometheus + Grafana):
 
 ```bash
 cd "$COURSE_HOME"/labs/lab08-observability
 docker compose -f docker-compose.observability.yml up -d --build
+until curl -sf localhost:8080/health >/dev/null; do sleep 3; done
 docker compose -f docker-compose.observability.yml ps
 ```
 
-**2. Generate some traffic:**
+**3. Generate some traffic:**
 
 ```bash
 for i in $(seq 1 40); do
@@ -261,12 +272,13 @@ done
 curl -s localhost:8080/metrics | grep -E '^order_requests_total' | head
 ```
 
-> **Give it a minute.** Prometheus scrapes every 15s, so `rate()` needs two
-> scrapes before it returns anything, and Grafana takes ~30–60s to finish
-> starting. If a query says "no data", wait and re-run it — that is normal,
-> not broken.
+> **Give it two minutes.** Prometheus scrapes every 15s, so `rate()` needs two
+> scrapes before it returns anything, and Grafana runs database migrations on
+> first start — measured at **~80 seconds** on a 6 GB VM. If a query says "no
+> data" or Grafana refuses the connection, wait and retry. That is normal, not
+> broken.
 
-**3. Query in Prometheus** — open <http://localhost:9090> and run:
+**4. Query in Prometheus** — open <http://localhost:9090> and run:
 
 ```promql
 rate(order_requests_total[1m])
@@ -290,7 +302,7 @@ curl -s 'localhost:9090/api/v1/targets?state=active' \
 
 All three targets (order-service, payment-service, prometheus) should be `up`.
 
-**4. Grafana** — open <http://localhost:3000> (admin/admin), find the
+**5. Grafana** — open <http://localhost:3000> (admin/admin), find the
 pre-provisioned dashboard, and watch it move as you generate more traffic.
 
 **Checkpoint:**
@@ -304,6 +316,16 @@ pre-provisioned dashboard, and watch it move as you generate more traffic.
 ## Part F — Game Day (20 min)
 
 Practise failure on a Tuesday morning instead of at 03:00 on a Sunday.
+
+**0. Confirm the baseline first** — an order placed while payment-service is
+still starting also reports `unavailable`, which would spoil the comparison:
+
+```bash
+curl -s -X POST localhost:8080/orders -H 'content-type: application/json' \
+  -d '{"item":"latte","quantity":1,"price":4.0}' | jq -r .payment.status
+```
+
+Wait until that prints **`approved`** before continuing.
 
 **1. Break the payment service** — the order service depends on it:
 
@@ -422,6 +444,8 @@ with more detail and stretch goals:
 | Pods stuck in `ImagePullBackOff` | You forgot `kind load docker-image` — kind has its own image store |
 | `curl localhost:30080` refuses | The cluster must be created **with** `kind-config.yaml` (it maps the port) |
 | `kubectl get endpoints` is empty | Pod labels do not match the Service selector, or readiness is failing |
-| Port 8080 already in use | `docker ps` then `docker rm -f <name>` |
+| Port 8080 already in use | The Part B stack is still up: `cd labs/app && docker compose down` |
+| Part E shows old data, or the game day says `approved` with payment stopped | You are hitting the Part B stack. `docker port order-service-obs` — if it prints nothing, `docker compose -f docker-compose.observability.yml down` then `up -d` again |
+| `kubectl rollout status` times out on a small VM | It is usually still converging: re-run it, or add `--timeout=300s` |
 | Grafana shows no data | Check Prometheus targets at <http://localhost:9090/targets> |
 | Trivy is slow on first run | It is downloading the vulnerability DB; the installer usually pre-caches it |
