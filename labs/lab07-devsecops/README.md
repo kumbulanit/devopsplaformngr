@@ -104,7 +104,10 @@ This gap between raw files and rendered output is exactly why policies must
 run against **what ships**, not what sits in the editor — and how policy
 catches drift when someone bypasses the kustomization.
 
-## Part E — Write Your Own Policy
+## Part E — Read a Policy, Then Watch It Bite
+
+You are here to learn how policy-as-code works, not to learn Rego syntax, so
+the policies are written for you. Read them, run them, break them.
 
 `policy/no_latest_tag.rego` forbids `:latest` (and untagged) images. Verify
 it against the manifests, then break it on purpose:
@@ -150,8 +153,46 @@ belong in a *blocking* gate on day one, and which start as report-only?
 | Policy never triggers | Check `input.kind` capitalisation and that the YAML parses (`kubectl kustomize`). |
 | `rego_parse_error` | You are using pre-1.0 syntax — see the `import rego.v1` note above. |
 
+## Part G — A Third Policy: Resource Limits
+
+A container with no memory limit can starve every other workload on the node,
+so this is usually the first rule a platform team enforces. The policy is
+already in `policy/require_memory_limits.rego` — read it, then prove it works:
+
+```bash
+cat labs/lab07-devsecops/policy/require_memory_limits.rego
+```
+
+It denies a Deployment whose containers omit `resources.limits.memory` or
+`resources.requests.memory`. First confirm the real manifests pass:
+
+```bash
+kubectl kustomize labs/lab06-kubernetes-kind/ | \
+  conftest test - --policy labs/lab07-devsecops/policy
+# Expected: all tests pass
+```
+
+Now strip the memory limits out and watch it fail:
+
+```bash
+kubectl kustomize labs/lab06-kubernetes-kind/ \
+  | sed '/^            memory: 256Mi$/d' \
+  | conftest test - --policy labs/lab07-devsecops/policy
+```
+
+Expected:
+
+```
+FAIL - - main - Container "order" must set resources.limits.memory
+FAIL - - main - Container "payment" must set resources.limits.memory
+```
+
+**Discussion:** this rule would block a real team's deploy. Would you ship it
+as blocking on day one, or run it in report-only mode until the backlog of
+existing services is fixed? What changes that answer?
+
 ## Stretch Goal
 
-Write a third policy requiring every container to set
-`resources.limits.memory`, and prove it fails when you delete the limits
-from a copy of `deployment-order.yaml`.
+Add a rule of your own to `require_memory_limits.rego` — for example, denying
+any container that does not set `readOnlyRootFilesystem: true`. The pattern to
+copy is already in the file; change the field it looks for and the message.

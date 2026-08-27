@@ -103,8 +103,26 @@ terminal):
 3. Confirm with logs: `docker compose -f docker-compose.observability.yml logs payment-service`
 4. Restore service (`docker start` / `docker unpause`) and verify recovery
    in Grafana.
-5. Write a **5-line blameless postmortem** in `postmortem.md`: what happened,
-   how it was detected, time to detect, time to recover, one improvement.
+5. Write a **5-line blameless postmortem**. The template is below — paste it,
+   then fill in the five answers (that part is the exercise):
+
+```bash
+cat > postmortem.md <<'MD'
+# Postmortem — payment-service outage (game day)
+
+**What happened:**
+
+**User impact** (who, how long, and how would we have known?):
+
+**How we detected it:**
+
+**What made this possible** (system, not people):
+
+**One systemic action, with an owner and a date:**
+MD
+
+cat postmortem.md
+```
 
 This is the incident lifecycle from the slides — detect → diagnose →
 mitigate → learn — at lab scale.
